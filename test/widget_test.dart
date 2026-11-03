@@ -159,6 +159,31 @@ void main() {
     expect(sceneImage.alignment, const Alignment(-0.78, 0));
   });
 
+  testWidgets('return scene uses the layered cinematic background', (
+    tester,
+  ) async {
+    await tester.pumpWidget(GodflixApp(progressStore: ProgressStore()));
+
+    await tester.tap(find.byKey(const Key('start-journey')));
+    await _pumpTransition(tester);
+    await tester.tap(find.byKey(const Key('skip-overview-intro')));
+    await _pumpTransition(tester);
+    await _tapVisible(tester, find.byKey(const Key('map-scene-10')));
+    await _pumpTransition(tester);
+
+    expect(
+      find.byKey(const Key('return-cinematic-background')),
+      findsOneWidget,
+    );
+    final assets = tester
+        .widgetList<Image>(find.byType(Image))
+        .where((image) => image.image is AssetImage)
+        .map((image) => (image.image as AssetImage).assetName)
+        .toSet();
+    expect(assets, contains('assets/images/scene_11_ithaca_plate.png'));
+    expect(assets, contains('assets/images/scene_11_ithaca_ship.png'));
+  });
+
   testWidgets('intro skip, journey log, and back navigation work', (
     tester,
   ) async {

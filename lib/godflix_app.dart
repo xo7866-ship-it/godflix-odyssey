@@ -806,18 +806,25 @@ class _JourneyScreenState extends State<JourneyScreen> {
         children: [
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 700),
-            child: _LivingBackground(
-              key: ValueKey(showScene ? _scene.imageAsset : 'summary'),
-              imageAsset: showScene
-                  ? _scene.imageAsset
-                  : 'assets/images/scene_3.jpg',
-              alignment: showScene
-                  ? _scene.id == 'troy'
-                        ? const Alignment(-0.78, 0)
-                        : const Alignment(0.35, 0)
-                  : const Alignment(0.25, 0),
-              semanticsLabel: showScene ? '${_scene.title} 배경' : '이타카로 돌아가는 배',
-            ),
+            child: showScene && _scene.id == 'return'
+                ? _IthacaReturnBackground(
+                    key: const ValueKey('return-cinematic-background'),
+                    semanticsLabel: '${_scene.title} 배경',
+                  )
+                : _LivingBackground(
+                    key: ValueKey(showScene ? _scene.imageAsset : 'summary'),
+                    imageAsset: showScene
+                        ? _scene.imageAsset
+                        : 'assets/images/scene_3.jpg',
+                    alignment: showScene
+                        ? _scene.id == 'troy'
+                              ? const Alignment(-0.78, 0)
+                              : const Alignment(0.35, 0)
+                        : const Alignment(0.25, 0),
+                    semanticsLabel: showScene
+                        ? '${_scene.title} 배경'
+                        : '이타카로 돌아가는 배',
+                  ),
           ),
           AnimatedOpacity(
             opacity: backgroundOnly ? 0 : 1,
@@ -1780,6 +1787,115 @@ class _SummaryRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _IthacaReturnBackground extends StatefulWidget {
+  const _IthacaReturnBackground({super.key, required this.semanticsLabel});
+
+  final String semanticsLabel;
+
+  @override
+  State<_IthacaReturnBackground> createState() =>
+      _IthacaReturnBackgroundState();
+}
+
+class _IthacaReturnBackgroundState extends State<_IthacaReturnBackground>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool? _motionDisabled;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 14),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final disabled = MediaQuery.disableAnimationsOf(context);
+    if (_motionDisabled == disabled) return;
+    _motionDisabled = disabled;
+    if (disabled) {
+      _controller.stop();
+      _controller.value = 0.5;
+    } else {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: widget.semanticsLabel,
+      image: true,
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            final progress = Curves.easeInOut.transform(_controller.value);
+            final wave = math.sin(progress * math.pi * 2);
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final alignment = constraints.maxWidth < 700
+                    ? const Alignment(-0.62, 0)
+                    : Alignment.center;
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ClipRect(
+                      child: Transform.translate(
+                        offset: Offset(-7 * progress, -2 * progress),
+                        child: Transform.scale(
+                          scale: 1.045 + (0.025 * progress),
+                          child: Image.asset(
+                            'assets/images/scene_11_ithaca_plate.png',
+                            fit: BoxFit.cover,
+                            alignment: alignment,
+                            excludeFromSemantics: true,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Transform.translate(
+                      offset: Offset(-2 * wave, 7 * wave),
+                      child: Transform.rotate(
+                        angle: wave * 0.0035,
+                        alignment: const Alignment(-0.55, 0.75),
+                        child: Transform.scale(
+                          scale: 1 + (wave.abs() * 0.0025),
+                          child: Image.asset(
+                            'assets/images/scene_11_ithaca_ship.png',
+                            fit: BoxFit.cover,
+                            alignment: alignment,
+                            excludeFromSemantics: true,
+                          ),
+                        ),
+                      ),
+                    ),
+                    IgnorePointer(
+                      child: CustomPaint(
+                        painter: _AtmospherePainter(progress: progress),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
