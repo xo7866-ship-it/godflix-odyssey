@@ -201,9 +201,19 @@ class LandingScreen extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const _LivingBackground(
-            imageAsset: 'assets/images/scene_3.jpg',
-            alignment: Alignment(0.25, 0),
+          const _LayeredSailingBackground(
+            key: Key('landing-cinematic-background'),
+            plateAsset: 'assets/images/landing_ithaca_plate.png',
+            shipAsset: 'assets/images/landing_ithaca_ship.png',
+            sourceSize: Size(1448, 1086),
+            narrowAlignment: Alignment(-0.2, 0),
+            sailPolygon: [
+              Offset(0.138, 0.448),
+              Offset(0.462, 0.498),
+              Offset(0.451, 0.733),
+              Offset(0.139, 0.754),
+            ],
+            sailPivot: Offset(0.318, 0.46),
             semanticsLabel: '배를 타고 이타카로 향하는 오디세이 여정',
           ),
           const DecoratedBox(
@@ -807,8 +817,12 @@ class _JourneyScreenState extends State<JourneyScreen> {
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 700),
             child: showScene && _scene.id == 'return'
-                ? _IthacaReturnBackground(
+                ? _LayeredSailingBackground(
                     key: const ValueKey('return-cinematic-background'),
+                    plateAsset: 'assets/images/scene_11_ithaca_plate.png',
+                    shipAsset: 'assets/images/scene_11_ithaca_ship.png',
+                    sourceSize: const Size(1672, 941),
+                    narrowAlignment: const Alignment(-0.62, 0),
                     semanticsLabel: '${_scene.title} 배경',
                   )
                 : _LivingBackground(
@@ -1792,17 +1806,32 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-class _IthacaReturnBackground extends StatefulWidget {
-  const _IthacaReturnBackground({super.key, required this.semanticsLabel});
+class _LayeredSailingBackground extends StatefulWidget {
+  const _LayeredSailingBackground({
+    super.key,
+    required this.plateAsset,
+    required this.shipAsset,
+    required this.sourceSize,
+    required this.narrowAlignment,
+    required this.semanticsLabel,
+    this.sailPolygon = const [],
+    this.sailPivot,
+  });
 
+  final String plateAsset;
+  final String shipAsset;
+  final Size sourceSize;
+  final Alignment narrowAlignment;
   final String semanticsLabel;
+  final List<Offset> sailPolygon;
+  final Offset? sailPivot;
 
   @override
-  State<_IthacaReturnBackground> createState() =>
-      _IthacaReturnBackgroundState();
+  State<_LayeredSailingBackground> createState() =>
+      _LayeredSailingBackgroundState();
 }
 
-class _IthacaReturnBackgroundState extends State<_IthacaReturnBackground>
+class _LayeredSailingBackgroundState extends State<_LayeredSailingBackground>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   bool? _motionDisabled;
@@ -1850,8 +1879,85 @@ class _IthacaReturnBackgroundState extends State<_IthacaReturnBackground>
             return LayoutBuilder(
               builder: (context, constraints) {
                 final alignment = constraints.maxWidth < 700
-                    ? const Alignment(-0.62, 0)
+                    ? widget.narrowAlignment
                     : Alignment.center;
+                final fittedSize = applyBoxFit(
+                  BoxFit.cover,
+                  widget.sourceSize,
+                  constraints.biggest,
+                ).destination;
+                final fittedOrigin = Offset(
+                  (constraints.maxWidth - fittedSize.width) *
+                      ((alignment.x + 1) / 2),
+                  (constraints.maxHeight - fittedSize.height) *
+                      ((alignment.y + 1) / 2),
+                );
+                final sailPivot = widget.sailPivot == null
+                    ? Offset.zero
+                    : fittedOrigin +
+                          Offset(
+                            widget.sailPivot!.dx * fittedSize.width,
+                            widget.sailPivot!.dy * fittedSize.height,
+                          );
+
+                Widget shipImage() => Image.asset(
+                  widget.shipAsset,
+                  fit: BoxFit.cover,
+                  alignment: alignment,
+                  excludeFromSemantics: true,
+                );
+
+                Widget shipLayer = shipImage();
+                if (widget.sailPolygon.isNotEmpty) {
+                  final sailClipper = _CoverPolygonClipper(
+                    sourceSize: widget.sourceSize,
+                    alignment: alignment,
+                    points: widget.sailPolygon,
+                  );
+                  shipLayer = Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ClipPath(
+                        clipper: _CoverPolygonClipper(
+                          sourceSize: widget.sourceSize,
+                          alignment: alignment,
+                          points: widget.sailPolygon,
+                          inverted: true,
+                        ),
+                        child: shipImage(),
+                      ),
+                      Transform.scale(
+                        scaleX: 1 + (wave * 0.012),
+                        scaleY: 1 - (wave.abs() * 0.004),
+                        origin: sailPivot,
+                        alignment: null,
+                        child: Transform.rotate(
+                          angle: wave * 0.0025,
+                          origin: sailPivot,
+                          alignment: null,
+                          child: ClipPath(
+                            key: const Key('fluttering-sail'),
+                            clipper: sailClipper,
+                            child: ShaderMask(
+                              blendMode: BlendMode.modulate,
+                              shaderCallback: (bounds) => LinearGradient(
+                                begin: Alignment(-1 + (wave * 0.12), -0.4),
+                                end: Alignment(1 + (wave * 0.12), 0.4),
+                                colors: const [
+                                  Colors.white,
+                                  Color(0xFFF0D6C0),
+                                  Colors.white,
+                                ],
+                                stops: [0, 0.52, 1],
+                              ).createShader(bounds),
+                              child: shipImage(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
                 return Stack(
                   fit: StackFit.expand,
                   children: [
@@ -1861,7 +1967,7 @@ class _IthacaReturnBackgroundState extends State<_IthacaReturnBackground>
                         child: Transform.scale(
                           scale: 1.045 + (0.025 * progress),
                           child: Image.asset(
-                            'assets/images/scene_11_ithaca_plate.png',
+                            widget.plateAsset,
                             fit: BoxFit.cover,
                             alignment: alignment,
                             excludeFromSemantics: true,
@@ -1876,12 +1982,7 @@ class _IthacaReturnBackgroundState extends State<_IthacaReturnBackground>
                         alignment: const Alignment(-0.55, 0.75),
                         child: Transform.scale(
                           scale: 1 + (wave.abs() * 0.0025),
-                          child: Image.asset(
-                            'assets/images/scene_11_ithaca_ship.png',
-                            fit: BoxFit.cover,
-                            alignment: alignment,
-                            excludeFromSemantics: true,
-                          ),
+                          child: shipLayer,
                         ),
                       ),
                     ),
@@ -1899,6 +2000,57 @@ class _IthacaReturnBackgroundState extends State<_IthacaReturnBackground>
       ),
     );
   }
+}
+
+class _CoverPolygonClipper extends CustomClipper<Path> {
+  const _CoverPolygonClipper({
+    required this.sourceSize,
+    required this.alignment,
+    required this.points,
+    this.inverted = false,
+  });
+
+  final Size sourceSize;
+  final Alignment alignment;
+  final List<Offset> points;
+  final bool inverted;
+
+  @override
+  Path getClip(Size size) {
+    final fittedSize = applyBoxFit(BoxFit.cover, sourceSize, size).destination;
+    final origin = Offset(
+      (size.width - fittedSize.width) * ((alignment.x + 1) / 2),
+      (size.height - fittedSize.height) * ((alignment.y + 1) / 2),
+    );
+    final polygon = Path();
+    for (var index = 0; index < points.length; index++) {
+      final point =
+          origin +
+          Offset(
+            points[index].dx * fittedSize.width,
+            points[index].dy * fittedSize.height,
+          );
+      if (index == 0) {
+        polygon.moveTo(point.dx, point.dy);
+      } else {
+        polygon.lineTo(point.dx, point.dy);
+      }
+    }
+    polygon.close();
+    if (!inverted) return polygon;
+    return Path.combine(
+      PathOperation.difference,
+      Path()..addRect(Offset.zero & size),
+      polygon,
+    );
+  }
+
+  @override
+  bool shouldReclip(covariant _CoverPolygonClipper oldClipper) =>
+      oldClipper.sourceSize != sourceSize ||
+      oldClipper.alignment != alignment ||
+      oldClipper.points != points ||
+      oldClipper.inverted != inverted;
 }
 
 class _LivingBackground extends StatefulWidget {

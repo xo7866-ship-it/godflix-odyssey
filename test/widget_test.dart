@@ -58,6 +58,18 @@ void main() {
     final store = ProgressStore();
     await tester.pumpWidget(GodflixApp(progressStore: store));
 
+    expect(
+      find.byKey(const Key('landing-cinematic-background')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('fluttering-sail')), findsOneWidget);
+    final landingAssets = tester
+        .widgetList<Image>(find.byType(Image))
+        .where((image) => image.image is AssetImage)
+        .map((image) => (image.image as AssetImage).assetName)
+        .toSet();
+    expect(landingAssets, contains('assets/images/landing_ithaca_plate.png'));
+    expect(landingAssets, contains('assets/images/landing_ithaca_ship.png'));
     expect(find.text('여정 시작하기'), findsOneWidget);
     await tester.tap(find.byKey(const Key('start-journey')));
     await _pumpTransition(tester);
