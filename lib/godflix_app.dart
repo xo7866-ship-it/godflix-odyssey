@@ -53,12 +53,13 @@ class _GodflixAppState extends State<GodflixApp> {
     _selectedChoices = _progressStore.readSelections();
   }
 
-  void _startJourney() {
+  void _beginDeparture() {
     unawaited(_ambientAudio.play());
-    setState(() {
-      _soundOn = true;
-      _journeyStarted = true;
-    });
+    setState(() => _soundOn = true);
+  }
+
+  void _startJourney() {
+    setState(() => _journeyStarted = true);
   }
 
   void _continueFromStory(int sceneIndex) {
@@ -156,6 +157,7 @@ class _GodflixAppState extends State<GodflixApp> {
       home: !_journeyStarted
           ? LandingScreen(
               completedScenes: _completedSceneIds.length,
+              onDeparture: _beginDeparture,
               onStart: _startJourney,
             )
           : !_storySeen
@@ -182,116 +184,168 @@ class _GodflixAppState extends State<GodflixApp> {
   }
 }
 
-class LandingScreen extends StatelessWidget {
+class LandingScreen extends StatefulWidget {
   const LandingScreen({
     super.key,
     required this.completedScenes,
+    required this.onDeparture,
     required this.onStart,
   });
 
   final int completedScenes;
+  final VoidCallback onDeparture;
   final VoidCallback onStart;
 
   @override
+  State<LandingScreen> createState() => _LandingScreenState();
+}
+
+class _LandingScreenState extends State<LandingScreen> {
+  Timer? _departureTimer;
+  bool _departing = false;
+
+  @override
+  void dispose() {
+    _departureTimer?.cancel();
+    super.dispose();
+  }
+
+  void _depart() {
+    if (_departing) return;
+    setState(() => _departing = true);
+    widget.onDeparture();
+    final duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 1800);
+    _departureTimer = Timer(duration, () {
+      if (mounted) widget.onStart();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isComplete = completedScenes >= journeyScenes.length;
-    final hasProgress = completedScenes > 0 && !isComplete;
+    final isComplete = widget.completedScenes >= journeyScenes.length;
+    final hasProgress = widget.completedScenes > 0 && !isComplete;
 
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const _LayeredSailingBackground(
-            key: Key('landing-cinematic-background'),
+          _LayeredSailingBackground(
+            key: const Key('landing-cinematic-background'),
             plateAsset: 'assets/images/landing_ithaca_plate.png',
             shipAsset: 'assets/images/landing_ithaca_ship.png',
-            sourceSize: Size(1448, 1086),
-            narrowAlignment: Alignment(-0.2, 0),
-            sailPolygon: [
+            sourceSize: const Size(1448, 1086),
+            narrowAlignment: const Alignment(-0.2, 0),
+            sailPolygon: const [
               Offset(0.138, 0.448),
               Offset(0.462, 0.498),
               Offset(0.451, 0.733),
               Offset(0.139, 0.754),
             ],
-            sailPivot: Offset(0.318, 0.46),
+            sailPivot: const Offset(0.318, 0.46),
+            departing: _departing,
             semanticsLabel: '배를 타고 이타카로 향하는 오디세이 여정',
           ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0x33000000),
-                  Color(0x66000000),
-                  Color(0xF20A0B0E),
-                ],
-                stops: [0, 0.42, 1],
+          AnimatedOpacity(
+            opacity: _departing ? 0.28 : 1,
+            duration: const Duration(milliseconds: 700),
+            curve: Curves.easeOut,
+            child: const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0x33000000),
+                    Color(0x66000000),
+                    Color(0xF20A0B0E),
+                  ],
+                  stops: [0, 0.42, 1],
+                ),
               ),
             ),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 760),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const _Brand(),
-                      const SizedBox(height: 28),
-                      Text(
-                        '오디세이\n하늘 가는 여정',
-                        style: Theme.of(context).textTheme.displayMedium
-                            ?.copyWith(
-                              fontSize: 52,
-                              height: 1.08,
-                              fontWeight: FontWeight.w900,
-                              shadows: const [
-                                Shadow(blurRadius: 20, color: Colors.black),
-                              ],
+          IgnorePointer(
+            ignoring: _departing,
+            child: AnimatedSlide(
+              offset: _departing ? const Offset(0, 0.04) : Offset.zero,
+              duration: const Duration(milliseconds: 450),
+              curve: Curves.easeIn,
+              child: AnimatedOpacity(
+                opacity: _departing ? 0 : 1,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeIn,
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 760),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _Brand(),
+                            const SizedBox(height: 28),
+                            Text(
+                              '오디세이\n하늘 가는 여정',
+                              style: Theme.of(context).textTheme.displayMedium
+                                  ?.copyWith(
+                                    fontSize: 52,
+                                    height: 1.08,
+                                    fontWeight: FontWeight.w900,
+                                    shadows: const [
+                                      Shadow(
+                                        blurRadius: 20,
+                                        color: Colors.black,
+                                      ),
+                                    ],
+                                  ),
                             ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '이야기 속 선택을 지나 말씀을 만나고,\n오늘의 삶에 적용할 한 걸음을 정합니다.',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              height: 1.55,
-                              color: Colors.white.withValues(alpha: 0.9),
+                            const SizedBox(height: 16),
+                            Text(
+                              '이야기 속 선택을 지나 말씀을 만나고,\n오늘의 삶에 적용할 한 걸음을 정합니다.',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    height: 1.55,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                  ),
                             ),
-                      ),
-                      const SizedBox(height: 28),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          key: const Key('start-journey'),
-                          onPressed: onStart,
-                          icon: Icon(
-                            isComplete ? Icons.auto_stories : Icons.explore,
-                          ),
-                          label: Text(
-                            isComplete
-                                ? '완주 기록 보기'
-                                : hasProgress
-                                ? '이어서 여정하기'
-                                : '여정 시작하기',
-                          ),
+                            const SizedBox(height: 28),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                key: const Key('start-journey'),
+                                onPressed: _depart,
+                                icon: Icon(
+                                  isComplete
+                                      ? Icons.auto_stories
+                                      : Icons.explore,
+                                ),
+                                label: Text(
+                                  isComplete
+                                      ? '완주 기록 보기'
+                                      : hasProgress
+                                      ? '이어서 여정하기'
+                                      : '여정 시작하기',
+                                ),
+                              ),
+                            ),
+                            if (hasProgress) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                '${widget.completedScenes}개의 장면을 완료했습니다.',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.72),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                      if (hasProgress) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          '$completedScenes개의 장면을 완료했습니다.',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.72),
-                          ),
-                        ),
-                      ],
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -358,9 +412,9 @@ class _StoryOverviewScreenState extends State<StoryOverviewScreen> {
         fit: StackFit.expand,
         children: [
           const _LivingBackground(
-            imageAsset: 'assets/images/scene_3.jpg',
+            imageAsset: 'assets/images/landing_ithaca_plate.png',
             alignment: Alignment(0.25, 0),
-            semanticsLabel: '바다를 건너 고향으로 향하는 오디세우스의 여정',
+            semanticsLabel: '배가 출항한 뒤의 이타카 바다',
           ),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 700),
@@ -1816,6 +1870,7 @@ class _LayeredSailingBackground extends StatefulWidget {
     required this.semanticsLabel,
     this.sailPolygon = const [],
     this.sailPivot,
+    this.departing = false,
   });
 
   final String plateAsset;
@@ -1825,6 +1880,7 @@ class _LayeredSailingBackground extends StatefulWidget {
   final String semanticsLabel;
   final List<Offset> sailPolygon;
   final Offset? sailPivot;
+  final bool departing;
 
   @override
   State<_LayeredSailingBackground> createState() =>
@@ -1975,14 +2031,32 @@ class _LayeredSailingBackgroundState extends State<_LayeredSailingBackground>
                         ),
                       ),
                     ),
-                    Transform.translate(
-                      offset: Offset(-2 * wave, 7 * wave),
-                      child: Transform.rotate(
-                        angle: wave * 0.0035,
-                        alignment: const Alignment(-0.55, 0.75),
-                        child: Transform.scale(
-                          scale: 1 + (wave.abs() * 0.0025),
-                          child: shipLayer,
+                    AnimatedSlide(
+                      key: const Key('ship-departure'),
+                      offset: widget.departing
+                          ? const Offset(-1.25, 0.12)
+                          : Offset.zero,
+                      duration: const Duration(milliseconds: 1700),
+                      curve: Curves.easeInCubic,
+                      child: AnimatedScale(
+                        scale: widget.departing ? 0.9 : 1,
+                        duration: const Duration(milliseconds: 1700),
+                        curve: Curves.easeInCubic,
+                        child: AnimatedOpacity(
+                          opacity: widget.departing ? 0 : 1,
+                          duration: const Duration(milliseconds: 1700),
+                          curve: const Interval(0.72, 1, curve: Curves.easeOut),
+                          child: Transform.translate(
+                            offset: Offset(-2 * wave, 7 * wave),
+                            child: Transform.rotate(
+                              angle: wave * 0.0035,
+                              alignment: const Alignment(-0.55, 0.75),
+                              child: Transform.scale(
+                                scale: 1 + (wave.abs() * 0.0025),
+                                child: shipLayer,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),

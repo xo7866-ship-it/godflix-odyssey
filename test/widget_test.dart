@@ -72,11 +72,29 @@ void main() {
     expect(landingAssets, contains('assets/images/landing_ithaca_ship.png'));
     expect(find.text('여정 시작하기'), findsOneWidget);
     await tester.tap(find.byKey(const Key('start-journey')));
-    await _pumpTransition(tester);
+    await tester.pump();
+
+    final departure = tester.widget<AnimatedSlide>(
+      find.byKey(const Key('ship-departure')),
+    );
+    expect(departure.offset, const Offset(-1.25, 0.12));
+    expect(find.text('오디세이 여정 지도'), findsNothing);
+    await _pumpDeparture(tester);
 
     expect(find.text('오디세이 여정 지도'), findsNothing);
     await _revealOverview(tester);
     expect(find.text('오디세이 여정 지도'), findsOneWidget);
+    expect(find.byKey(const Key('fluttering-sail')), findsNothing);
+    final overviewAssets = tester
+        .widgetList<Image>(find.byType(Image))
+        .where((image) => image.image is AssetImage)
+        .map((image) => (image.image as AssetImage).assetName)
+        .toSet();
+    expect(overviewAssets, contains('assets/images/landing_ithaca_plate.png'));
+    expect(
+      overviewAssets,
+      isNot(contains('assets/images/landing_ithaca_ship.png')),
+    );
     expect(find.byKey(const Key('map-scene-10')), findsOneWidget);
     expect(
       tester
@@ -150,7 +168,7 @@ void main() {
 
     expect(find.text('이어서 여정하기'), findsOneWidget);
     await tester.tap(find.byKey(const Key('start-journey')));
-    await _pumpTransition(tester);
+    await _pumpDeparture(tester);
     await _revealOverview(tester);
     expect(find.text('1 / 11 장면 완료'), findsOneWidget);
     await _tapVisible(tester, find.byKey(const Key('map-scene-1')));
@@ -177,7 +195,7 @@ void main() {
     await tester.pumpWidget(GodflixApp(progressStore: ProgressStore()));
 
     await tester.tap(find.byKey(const Key('start-journey')));
-    await _pumpTransition(tester);
+    await _pumpDeparture(tester);
     await tester.tap(find.byKey(const Key('skip-overview-intro')));
     await _pumpTransition(tester);
     await _tapVisible(tester, find.byKey(const Key('map-scene-10')));
@@ -203,7 +221,7 @@ void main() {
     await tester.pumpWidget(GodflixApp(progressStore: store));
 
     await tester.tap(find.byKey(const Key('start-journey')));
-    await _pumpTransition(tester);
+    await _pumpDeparture(tester);
     await tester.tap(find.byKey(const Key('skip-overview-intro')));
     await _pumpTransition(tester);
     await _tapVisible(tester, find.byKey(const Key('map-scene-0')));
@@ -248,6 +266,10 @@ void main() {
 
 Future<void> _pumpTransition(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 500));
+}
+
+Future<void> _pumpDeparture(WidgetTester tester) async {
+  await tester.pump(const Duration(milliseconds: 1900));
 }
 
 Future<void> _revealOverview(WidgetTester tester) async {
