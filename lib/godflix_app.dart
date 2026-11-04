@@ -720,6 +720,16 @@ enum JourneyStep {
   summary,
 }
 
+typedef _SceneVisual = ({
+  Alignment alignment,
+  Offset pan,
+  double zoom,
+  double rotation,
+  Duration duration,
+  Color haze,
+  bool water,
+});
+
 class JourneyScreen extends StatefulWidget {
   const JourneyScreen({
     super.key,
@@ -757,6 +767,81 @@ class _JourneyScreenState extends State<JourneyScreen> {
   final _answers = <JourneyAnswer>[];
 
   JourneyScene get _scene => journeyScenes[_sceneIndex];
+
+  _SceneVisual _sceneVisual(String id) => switch (id) {
+    'troy' => (
+      alignment: const Alignment(-0.36, 0),
+      pan: const Offset(-24, -8),
+      zoom: 0.055,
+      rotation: 0.004,
+      duration: const Duration(seconds: 14),
+      haze: const Color(0xFFFF8A3D),
+      water: false,
+    ),
+    'cyclops' => (
+      alignment: const Alignment(0.58, 0),
+      pan: const Offset(26, -5),
+      zoom: 0.05,
+      rotation: 0.003,
+      duration: const Duration(seconds: 17),
+      haze: const Color(0xFFFFC078),
+      water: false,
+    ),
+    'circe' => (
+      alignment: const Alignment(0.34, 0),
+      pan: const Offset(-18, 4),
+      zoom: 0.04,
+      rotation: 0.002,
+      duration: const Duration(seconds: 20),
+      haze: const Color(0xFFCED9D4),
+      water: false,
+    ),
+    'underworld' => (
+      alignment: const Alignment(0.62, 0),
+      pan: const Offset(22, -6),
+      zoom: 0.045,
+      rotation: 0.002,
+      duration: const Duration(seconds: 22),
+      haze: const Color(0xFFAEC7E8),
+      water: false,
+    ),
+    'sirens' => (
+      alignment: const Alignment(0.08, 0),
+      pan: const Offset(-28, 6),
+      zoom: 0.045,
+      rotation: 0.005,
+      duration: const Duration(seconds: 16),
+      haze: const Color(0xFFD9F0FF),
+      water: true,
+    ),
+    'scylla' => (
+      alignment: const Alignment(-0.22, 0),
+      pan: const Offset(20, 10),
+      zoom: 0.06,
+      rotation: 0.006,
+      duration: const Duration(seconds: 14),
+      haze: const Color(0xFFB9E4FF),
+      water: true,
+    ),
+    'helios' => (
+      alignment: const Alignment(0.08, 0),
+      pan: const Offset(-24, 4),
+      zoom: 0.04,
+      rotation: 0.004,
+      duration: const Duration(seconds: 19),
+      haze: const Color(0xFFFFE6A8),
+      water: true,
+    ),
+    _ => (
+      alignment: const Alignment(0.35, 0),
+      pan: const Offset(18, 5),
+      zoom: 0.035,
+      rotation: 0.006,
+      duration: const Duration(seconds: 18),
+      haze: Colors.white,
+      water: true,
+    ),
+  };
 
   @override
   void initState() {
@@ -864,6 +949,7 @@ class _JourneyScreenState extends State<JourneyScreen> {
     final backgroundOnly = _step == JourneyStep.background;
     final brightenScene =
         _step == JourneyStep.story || _step == JourneyStep.choice;
+    final sceneVisual = _sceneVisual(showScene ? _scene.id : 'summary');
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
@@ -885,10 +971,14 @@ class _JourneyScreenState extends State<JourneyScreen> {
                         ? _scene.imageAsset
                         : 'assets/images/scene_3.jpg',
                     alignment: showScene
-                        ? _scene.id == 'troy'
-                              ? const Alignment(-0.78, 0)
-                              : const Alignment(0.35, 0)
+                        ? sceneVisual.alignment
                         : const Alignment(0.25, 0),
+                    motionOffset: sceneVisual.pan,
+                    zoomAmount: sceneVisual.zoom,
+                    rotationAmount: sceneVisual.rotation,
+                    motionDuration: sceneVisual.duration,
+                    hazeColor: sceneVisual.haze,
+                    showWater: sceneVisual.water,
                     semanticsLabel: showScene
                         ? '${_scene.title} 배경'
                         : '이타카로 돌아가는 배',
@@ -2133,11 +2223,23 @@ class _LivingBackground extends StatefulWidget {
     required this.imageAsset,
     required this.alignment,
     required this.semanticsLabel,
+    this.motionOffset = const Offset(18, 5),
+    this.zoomAmount = 0.035,
+    this.rotationAmount = 0.006,
+    this.motionDuration = const Duration(seconds: 18),
+    this.hazeColor = Colors.white,
+    this.showWater = true,
   });
 
   final String imageAsset;
   final Alignment alignment;
   final String semanticsLabel;
+  final Offset motionOffset;
+  final double zoomAmount;
+  final double rotationAmount;
+  final Duration motionDuration;
+  final Color hazeColor;
+  final bool showWater;
 
   @override
   State<_LivingBackground> createState() => _LivingBackgroundState();
@@ -2153,7 +2255,7 @@ class _LivingBackgroundState extends State<_LivingBackground>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 18),
+      duration: widget.motionDuration,
     )..repeat(reverse: true);
   }
 
@@ -2192,12 +2294,15 @@ class _LivingBackgroundState extends State<_LivingBackground>
               children: [
                 ClipRect(
                   child: Transform.rotate(
-                    angle: (progress - 0.5) * 0.006,
+                    angle: (progress - 0.5) * widget.rotationAmount,
                     alignment: Alignment.bottomLeft,
                     child: Transform.translate(
-                      offset: Offset(18 * (progress - 0.5), 5 * progress),
+                      offset: Offset(
+                        widget.motionOffset.dx * (progress - 0.5),
+                        widget.motionOffset.dy * (progress - 0.5),
+                      ),
                       child: Transform.scale(
-                        scale: 1.06 + (0.035 * progress),
+                        scale: 1.06 + (widget.zoomAmount * progress),
                         child: Image.asset(
                           widget.imageAsset,
                           fit: BoxFit.cover,
@@ -2210,7 +2315,11 @@ class _LivingBackgroundState extends State<_LivingBackground>
                 ),
                 IgnorePointer(
                   child: CustomPaint(
-                    painter: _AtmospherePainter(progress: progress),
+                    painter: _AtmospherePainter(
+                      progress: progress,
+                      hazeColor: widget.hazeColor,
+                      showWater: widget.showWater,
+                    ),
                   ),
                 ),
               ],
@@ -2223,14 +2332,20 @@ class _LivingBackgroundState extends State<_LivingBackground>
 }
 
 class _AtmospherePainter extends CustomPainter {
-  const _AtmospherePainter({required this.progress});
+  const _AtmospherePainter({
+    required this.progress,
+    this.hazeColor = Colors.white,
+    this.showWater = true,
+  });
 
   final double progress;
+  final Color hazeColor;
+  final bool showWater;
 
   @override
   void paint(Canvas canvas, Size size) {
     final cloudPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08)
+      ..color = hazeColor.withValues(alpha: 0.08)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28);
     final cloudX = (size.width * 1.45 * progress) - (size.width * 0.35);
     canvas.drawOval(
@@ -2247,8 +2362,10 @@ class _AtmospherePainter extends CustomPainter {
         width: size.width * 0.25,
         height: size.height * 0.055,
       ),
-      cloudPaint..color = Colors.white.withValues(alpha: 0.05),
+      cloudPaint..color = hazeColor.withValues(alpha: 0.05),
     );
+
+    if (!showWater) return;
 
     for (var layer = 0; layer < 3; layer++) {
       final baseY = size.height * (0.7 + (layer * 0.045));
@@ -2280,7 +2397,9 @@ class _AtmospherePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _AtmospherePainter oldDelegate) =>
-      oldDelegate.progress != progress;
+      oldDelegate.progress != progress ||
+      oldDelegate.hazeColor != hazeColor ||
+      oldDelegate.showWater != showWater;
 }
 
 class _StepPanel extends StatelessWidget {

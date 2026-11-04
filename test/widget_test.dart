@@ -16,6 +16,18 @@ void main() {
     }
   });
 
+  test('provided scene artwork is connected to scenes two through eight', () {
+    expect(journeyScenes.skip(1).take(7).map((scene) => scene.imageAsset), [
+      'assets/images/scene_2_troy.jpg',
+      'assets/images/scene_3_cyclops.jpg',
+      'assets/images/scene_4_circe.jpg',
+      'assets/images/scene_5_underworld.jpg',
+      'assets/images/scene_6_sirens.jpg',
+      'assets/images/scene_7_scylla.jpg',
+      'assets/images/scene_8_helios.jpg',
+    ]);
+  });
+
   test('journey content uses Seventh-day Adventist terminology', () {
     final content = journeyScenes
         .expand(
@@ -184,9 +196,11 @@ void main() {
         .firstWhere(
           (image) =>
               image.image is AssetImage &&
-              (image.image as AssetImage).assetName.endsWith('scene_2.jpg'),
+              (image.image as AssetImage).assetName.endsWith(
+                'scene_2_troy.jpg',
+              ),
         );
-    expect(sceneImage.alignment, const Alignment(-0.78, 0));
+    expect(sceneImage.alignment, const Alignment(-0.36, 0));
   });
 
   testWidgets('return scene uses the layered cinematic background', (
