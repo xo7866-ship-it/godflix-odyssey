@@ -388,7 +388,7 @@ class _StoryOverviewScreenState extends State<StoryOverviewScreen> {
     super.initState();
     _showStory = widget.showImmediately;
     if (!_showStory) {
-      _revealTimer = Timer(const Duration(seconds: 3), () {
+      _revealTimer = Timer(const Duration(seconds: 1), () {
         if (mounted) setState(() => _showStory = true);
       });
     }

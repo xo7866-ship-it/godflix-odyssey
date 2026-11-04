@@ -273,7 +273,7 @@ Future<void> _pumpDeparture(WidgetTester tester) async {
 }
 
 Future<void> _revealOverview(WidgetTester tester) async {
-  await tester.pump(const Duration(seconds: 3));
+  await tester.pump(const Duration(seconds: 1));
   await tester.pump(const Duration(milliseconds: 800));
 }
 
