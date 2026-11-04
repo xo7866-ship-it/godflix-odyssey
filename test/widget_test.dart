@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:godflix/ambient_audio.dart';
 import 'package:godflix/data/scenes.dart';
 import 'package:godflix/godflix_app.dart';
 import 'package:godflix/progress_store.dart';
@@ -26,6 +27,35 @@ void main() {
       'assets/images/scene_7_scylla.jpg',
       'assets/images/scene_8_helios.jpg',
     ]);
+  });
+
+  test('episode audio is connected and the return uses sea ambience', () {
+    expect(journeyScenes.map((scene) => scene.audioAsset), [
+      'assets/audio/scene_1_ithaca.m4a',
+      'assets/audio/scene_2_troy.m4a',
+      'assets/audio/scene_3_cyclops.m4a',
+      'assets/audio/scene_4_circe.m4a',
+      'assets/audio/scene_5_underworld.m4a',
+      'assets/audio/scene_6_sirens.m4a',
+      'assets/audio/scene_7_scylla.m4a',
+      'assets/audio/scene_8_helios.m4a',
+      'assets/audio/scene_9_storm.m4a',
+      'assets/audio/scene_10_calypso.m4a',
+      AmbientAudio.defaultAsset,
+    ]);
+  });
+
+  test('ambient audio remembers the active track and ducked volume', () async {
+    final audio = AmbientAudio();
+    await audio.play(asset: 'assets/audio/scene_6_sirens.m4a', volume: 0.32);
+    expect(audio.isPlaying, isTrue);
+    expect(audio.asset, 'assets/audio/scene_6_sirens.m4a');
+    expect(audio.volume, 0.32);
+
+    audio.setVolume(0.09);
+    expect(audio.volume, 0.09);
+    audio.pause();
+    expect(audio.isPlaying, isFalse);
   });
 
   test('journey content uses Seventh-day Adventist terminology', () {

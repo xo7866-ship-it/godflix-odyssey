@@ -10,6 +10,8 @@ import 'progress_store.dart';
 
 const _gold = Color(0xFFF5C542);
 const _ink = Color(0xFF090B0F);
+const _sceneAudioVolume = 0.32;
+const _applicationAudioVolume = 0.09;
 
 class GodflixApp extends StatefulWidget {
   const GodflixApp({super.key, this.progressStore});
@@ -30,6 +32,8 @@ class _GodflixAppState extends State<GodflixApp> {
   bool _journeyStarted = false;
   bool _storySeen = false;
   bool _mapSeen = false;
+  String _currentAudioAsset = AmbientAudio.defaultAsset;
+  double _currentAudioVolume = _sceneAudioVolume;
 
   @override
   void initState() {
@@ -54,7 +58,12 @@ class _GodflixAppState extends State<GodflixApp> {
   }
 
   void _beginDeparture() {
-    unawaited(_ambientAudio.play());
+    unawaited(
+      _ambientAudio.play(
+        asset: AmbientAudio.defaultAsset,
+        volume: _sceneAudioVolume,
+      ),
+    );
     setState(() => _soundOn = true);
   }
 
@@ -63,6 +72,7 @@ class _GodflixAppState extends State<GodflixApp> {
   }
 
   void _continueFromStory(int sceneIndex) {
+    _changeAudio(journeyScenes[sceneIndex].audioAsset, false);
     setState(() {
       _selectedSceneIndex = sceneIndex;
       _storySeen = true;
@@ -86,9 +96,25 @@ class _GodflixAppState extends State<GodflixApp> {
     if (_soundOn) {
       _ambientAudio.pause();
     } else {
-      unawaited(_ambientAudio.play());
+      unawaited(
+        _ambientAudio.play(
+          asset: _currentAudioAsset,
+          volume: _currentAudioVolume,
+        ),
+      );
     }
     setState(() => _soundOn = !_soundOn);
+  }
+
+  void _changeAudio(String asset, bool subdued) {
+    _currentAudioAsset = asset;
+    _currentAudioVolume = subdued ? _applicationAudioVolume : _sceneAudioVolume;
+    if (!_soundOn) return;
+    if (_ambientAudio.asset == asset) {
+      _ambientAudio.setVolume(_currentAudioVolume);
+    } else {
+      unawaited(_ambientAudio.play(asset: asset, volume: _currentAudioVolume));
+    }
   }
 
   void _resetJourney() {
@@ -102,10 +128,13 @@ class _GodflixAppState extends State<GodflixApp> {
       _storySeen = false;
       _mapSeen = false;
       _soundOn = false;
+      _currentAudioAsset = AmbientAudio.defaultAsset;
+      _currentAudioVolume = _sceneAudioVolume;
     });
   }
 
   void _backToOverview() {
+    _changeAudio(AmbientAudio.defaultAsset, false);
     setState(() => _storySeen = false);
   }
 
@@ -176,6 +205,7 @@ class _GodflixAppState extends State<GodflixApp> {
               soundOn: _soundOn,
               onProgress: _recordProgress,
               onSelection: _recordSelection,
+              onAudioChanged: _changeAudio,
               onToggleSound: _toggleSound,
               onBackToOverview: _backToOverview,
               onReset: _resetJourney,
@@ -739,6 +769,7 @@ class JourneyScreen extends StatefulWidget {
     required this.soundOn,
     required this.onProgress,
     required this.onSelection,
+    required this.onAudioChanged,
     required this.onToggleSound,
     required this.onBackToOverview,
     required this.onReset,
@@ -750,6 +781,7 @@ class JourneyScreen extends StatefulWidget {
   final bool soundOn;
   final ValueChanged<String> onProgress;
   final void Function(String sceneId, int choiceIndex) onSelection;
+  final void Function(String asset, bool subdued) onAudioChanged;
   final VoidCallback onToggleSound;
   final VoidCallback onBackToOverview;
   final VoidCallback onReset;
@@ -872,6 +904,16 @@ class _JourneyScreenState extends State<JourneyScreen> {
   }
 
   void _goTo(JourneyStep step) {
+    final subdued =
+        step == JourneyStep.scripture ||
+        step == JourneyStep.reflection ||
+        step == JourneyStep.complete;
+    widget.onAudioChanged(
+      step == JourneyStep.summary
+          ? AmbientAudio.defaultAsset
+          : _scene.audioAsset,
+      subdued,
+    );
     setState(() => _step = step);
   }
 
@@ -940,6 +982,7 @@ class _JourneyScreenState extends State<JourneyScreen> {
       _reflectionController.clear();
       _step = JourneyStep.background;
     });
+    widget.onAudioChanged(_scene.audioAsset, false);
     _scheduleSceneStory();
   }
 
