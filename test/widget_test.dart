@@ -34,6 +34,22 @@ void main() {
     ]);
   });
 
+  test('scene hooks match the approved yellow captions exactly', () {
+    expect(journeyScenes.map((scene) => scene.hook), [
+      '왕이 없는 섬에 들끓는 ‘구혼자들’',
+      '요새를 무너뜨리는 ‘바늘구멍’',
+      '홀린 듯 빨려 들어간 ‘함정’',
+      '치명적인 ‘친절’',
+      '어리석은 ‘구조요청’',
+      '죽음이 부르는 ‘유혹’',
+      '최악과 차악 사이에서',
+      '마음을 무너뜨리는 ‘조롱’',
+      '가장 두려운 결과 ‘몰살’',
+      '망각의 ‘저주’ or 무감각의 ‘무덤’',
+      '숨어든 ‘진짜’',
+    ]);
+  });
+
   test('provided scene artwork is connected to scenes two through eight', () {
     expect(journeyScenes.skip(1).take(7).map((scene) => scene.imageAsset), [
       'assets/images/scene_2_troy.jpg',
