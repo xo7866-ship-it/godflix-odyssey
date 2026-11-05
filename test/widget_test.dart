@@ -18,6 +18,22 @@ void main() {
     }
   });
 
+  test('episode titles match the approved wording exactly', () {
+    expect(journeyScenes.map((scene) => scene.title), [
+      '왕이 없는 섬, 이타카',
+      '철옹성을 무너뜨린 속임수, 트로이 목마',
+      '양을 따라간 곳에서 만난 괴물, 외눈박이 거인',
+      '위험한 초대, 키르케의 섬과 돼지들',
+      '죽은 자들에게 묻는 비극, 테이레시아스',
+      '들을 수 없는 노래, 세이렌',
+      '비참한 선택, 소용돌이와 여섯 괴물',
+      '가장 잔인한 농담, 제우스 섬의 소들',
+      '부서지는 배와 절규, 격심한 폭풍',
+      '넘어진 자리, 칼립소의 섬',
+      '왕의 귀환, 다시, 이타카',
+    ]);
+  });
+
   test('provided scene artwork is connected to scenes two through eight', () {
     expect(journeyScenes.skip(1).take(7).map((scene) => scene.imageAsset), [
       'assets/images/scene_2_troy.jpg',
@@ -158,7 +174,7 @@ void main() {
     expect(find.byKey(const Key('scene-choices')), findsNothing);
     await _revealScene(tester);
 
-    expect(find.text('왕이 없는 섬 이타카'), findsOneWidget);
+    expect(find.text('왕이 없는 섬, 이타카'), findsOneWidget);
     expect(find.byKey(const Key('scene-story')), findsOneWidget);
     expect(find.byKey(const Key('scene-choices')), findsNothing);
     await _tapVisible(tester, find.byKey(const Key('open-choices')));
@@ -199,7 +215,7 @@ void main() {
     await _tapVisible(tester, find.byKey(const Key('next-scene')));
     await _pumpTransition(tester);
     await _revealScene(tester);
-    expect(find.text('철옹성을 무너뜨린 트로이 목마'), findsOneWidget);
+    expect(find.text('철옹성을 무너뜨린 속임수, 트로이 목마'), findsOneWidget);
   });
 
   testWidgets('saved progress resumes at the second scene', (tester) async {
@@ -218,7 +234,7 @@ void main() {
     await _pumpTransition(tester);
     await _revealScene(tester);
 
-    expect(find.text('철옹성을 무너뜨린 트로이 목마'), findsOneWidget);
+    expect(find.text('철옹성을 무너뜨린 속임수, 트로이 목마'), findsOneWidget);
     expect(find.text('2 / 11 · 줄거리'), findsOneWidget);
     expect(find.byKey(const Key('current-choice-status')), findsOneWidget);
     expect(find.byKey(const Key('scene-progress-11')), findsOneWidget);

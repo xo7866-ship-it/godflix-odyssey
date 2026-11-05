@@ -708,7 +708,7 @@ class _AncientJourneyMap extends StatelessWidget {
                 _MapSceneListButton(
                   key: Key('map-scene-$index'),
                   number: index + 1,
-                  label: _labels[index],
+                  label: journeyScenes[index].title,
                   complete: completedSceneIds.contains(journeyScenes[index].id),
                   onTap: () => onSceneSelected(index),
                 ),
