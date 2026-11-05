@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'ambient_audio.dart';
 import 'data/scenes.dart';
+import 'fullscreen_controller.dart';
 import 'models/scene.dart';
 import 'progress_store.dart';
 
@@ -12,11 +13,13 @@ const _gold = Color(0xFFF5C542);
 const _ink = Color(0xFF090B0F);
 const _sceneAudioVolume = 0.32;
 const _applicationAudioVolume = 0.09;
+const _compactLayoutBreakpoint = 700.0;
 
 class GodflixApp extends StatefulWidget {
-  const GodflixApp({super.key, this.progressStore});
+  const GodflixApp({super.key, this.progressStore, this.fullscreenController});
 
   final ProgressStore? progressStore;
+  final FullscreenController? fullscreenController;
 
   @override
   State<GodflixApp> createState() => _GodflixAppState();
@@ -25,6 +28,7 @@ class GodflixApp extends StatefulWidget {
 class _GodflixAppState extends State<GodflixApp> {
   late final ProgressStore _progressStore;
   late final AmbientAudio _ambientAudio;
+  late final FullscreenController _fullscreenController;
   late Set<String> _completedSceneIds;
   late Map<String, int> _selectedChoices;
   int _selectedSceneIndex = 0;
@@ -40,6 +44,9 @@ class _GodflixAppState extends State<GodflixApp> {
     super.initState();
     _progressStore = widget.progressStore ?? ProgressStore();
     _ambientAudio = AmbientAudio();
+    _fullscreenController =
+        widget.fullscreenController ?? FullscreenController();
+    _fullscreenController.addListener(_handleFullscreenChanged);
     _completedSceneIds = _progressStore.readCompletedSceneIds();
     final legacyCount = _progressStore.readCompletedScenes().clamp(
       0,
@@ -138,8 +145,32 @@ class _GodflixAppState extends State<GodflixApp> {
     setState(() => _storySeen = false);
   }
 
+  void _handleFullscreenChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _toggleFullscreen(BuildContext screenContext) async {
+    if (!_fullscreenController.isSupported) {
+      await showModalBottomSheet<void>(
+        context: screenContext,
+        backgroundColor: const Color(0xFF151922),
+        showDragHandle: true,
+        builder: (context) => const _FullscreenHelpSheet(),
+      );
+      return;
+    }
+    final succeeded = await _fullscreenController.toggle();
+    if (!succeeded && screenContext.mounted) {
+      ScaffoldMessenger.of(screenContext).showSnackBar(
+        const SnackBar(content: Text('이 브라우저에서는 전체화면을 시작할 수 없습니다.')),
+      );
+    }
+  }
+
   @override
   void dispose() {
+    _fullscreenController.removeListener(_handleFullscreenChanged);
+    _fullscreenController.dispose();
     _ambientAudio.dispose();
     super.dispose();
   }
@@ -186,8 +217,10 @@ class _GodflixAppState extends State<GodflixApp> {
       home: !_journeyStarted
           ? LandingScreen(
               completedScenes: _completedSceneIds.length,
+              isFullscreen: _fullscreenController.isFullscreen,
               onDeparture: _beginDeparture,
               onStart: _startJourney,
+              onToggleFullscreen: _toggleFullscreen,
             )
           : !_storySeen
           ? StoryOverviewScreen(
@@ -196,17 +229,21 @@ class _GodflixAppState extends State<GodflixApp> {
               selectedChoices: _selectedChoices,
               showImmediately: _mapSeen,
               soundOn: _soundOn,
+              isFullscreen: _fullscreenController.isFullscreen,
               onToggleSound: _toggleSound,
+              onToggleFullscreen: _toggleFullscreen,
             )
           : JourneyScreen(
               initialSceneIndex: _selectedSceneIndex,
               completedSceneIds: _completedSceneIds,
               selectedChoices: _selectedChoices,
               soundOn: _soundOn,
+              isFullscreen: _fullscreenController.isFullscreen,
               onProgress: _recordProgress,
               onSelection: _recordSelection,
               onAudioChanged: _changeAudio,
               onToggleSound: _toggleSound,
+              onToggleFullscreen: _toggleFullscreen,
               onBackToOverview: _backToOverview,
               onReset: _resetJourney,
             ),
@@ -218,13 +255,17 @@ class LandingScreen extends StatefulWidget {
   const LandingScreen({
     super.key,
     required this.completedScenes,
+    required this.isFullscreen,
     required this.onDeparture,
     required this.onStart,
+    required this.onToggleFullscreen,
   });
 
   final int completedScenes;
+  final bool isFullscreen;
   final VoidCallback onDeparture;
   final VoidCallback onStart;
+  final void Function(BuildContext) onToggleFullscreen;
 
   @override
   State<LandingScreen> createState() => _LandingScreenState();
@@ -256,6 +297,7 @@ class _LandingScreenState extends State<LandingScreen> {
   Widget build(BuildContext context) {
     final isComplete = widget.completedScenes >= journeyScenes.length;
     final hasProgress = widget.completedScenes > 0 && !isComplete;
+    final compact = MediaQuery.sizeOf(context).width < _compactLayoutBreakpoint;
 
     return Scaffold(
       body: Stack(
@@ -308,7 +350,7 @@ class _LandingScreenState extends State<LandingScreen> {
                 curve: Curves.easeIn,
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(compact ? 18 : 24),
                     child: Align(
                       alignment: Alignment.bottomCenter,
                       child: ConstrainedBox(
@@ -318,12 +360,12 @@ class _LandingScreenState extends State<LandingScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const _Brand(),
-                            const SizedBox(height: 28),
+                            SizedBox(height: compact ? 20 : 28),
                             Text(
                               '오디세이\n하늘 가는 여정',
                               style: Theme.of(context).textTheme.displayMedium
                                   ?.copyWith(
-                                    fontSize: 52,
+                                    fontSize: compact ? 40 : 52,
                                     height: 1.08,
                                     fontWeight: FontWeight.w900,
                                     shadows: const [
@@ -343,7 +385,7 @@ class _LandingScreenState extends State<LandingScreen> {
                                     color: Colors.white.withValues(alpha: 0.9),
                                   ),
                             ),
-                            const SizedBox(height: 28),
+                            SizedBox(height: compact ? 22 : 28),
                             SizedBox(
                               width: double.infinity,
                               child: FilledButton.icon(
@@ -381,6 +423,27 @@ class _LandingScreenState extends State<LandingScreen> {
               ),
             ),
           ),
+          IgnorePointer(
+            ignoring: _departing,
+            child: AnimatedOpacity(
+              opacity: _departing ? 0 : 1,
+              duration: const Duration(milliseconds: 300),
+              child: SafeArea(
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: _FullscreenButton(
+                      key: const Key('toggle-fullscreen-landing'),
+                      isFullscreen: widget.isFullscreen,
+                      filled: true,
+                      onPressed: () => widget.onToggleFullscreen(context),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -395,7 +458,9 @@ class StoryOverviewScreen extends StatefulWidget {
     required this.selectedChoices,
     required this.showImmediately,
     required this.soundOn,
+    required this.isFullscreen,
     required this.onToggleSound,
+    required this.onToggleFullscreen,
   });
 
   final ValueChanged<int> onSceneSelected;
@@ -403,7 +468,9 @@ class StoryOverviewScreen extends StatefulWidget {
   final Map<String, int> selectedChoices;
   final bool showImmediately;
   final bool soundOn;
+  final bool isFullscreen;
   final VoidCallback onToggleSound;
+  final void Function(BuildContext) onToggleFullscreen;
 
   @override
   State<StoryOverviewScreen> createState() => _StoryOverviewScreenState();
@@ -553,6 +620,13 @@ class _StoryOverviewScreenState extends State<StoryOverviewScreen> {
                         widget.soundOn ? Icons.volume_up : Icons.volume_off,
                       ),
                     ),
+                    const SizedBox(width: 6),
+                    _FullscreenButton(
+                      key: const Key('toggle-fullscreen-overview'),
+                      isFullscreen: widget.isFullscreen,
+                      filled: true,
+                      onPressed: () => widget.onToggleFullscreen(context),
+                    ),
                   ],
                 ),
               ),
@@ -607,7 +681,44 @@ class _AncientJourneyMap extends StatelessWidget {
       builder: (context, constraints) {
         final mapWidth = constraints.maxWidth;
         final mapHeight = mapWidth * 9 / 16;
+        if (mapWidth < _compactLayoutBreakpoint) {
+          return Column(
+            key: const Key('compact-map-layout'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                key: const Key('compact-map-image'),
+                borderRadius: BorderRadius.circular(18),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Image.asset(
+                    'assets/images/odyssey_map_ancient.png',
+                    fit: BoxFit.cover,
+                    semanticLabel: '고대 지중해 오디세이 여정 지도',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+              const Text(
+                '에피소드 선택',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 10),
+              for (var index = 0; index < journeyScenes.length; index++) ...[
+                _MapSceneListButton(
+                  key: Key('map-scene-$index'),
+                  number: index + 1,
+                  label: _labels[index],
+                  complete: completedSceneIds.contains(journeyScenes[index].id),
+                  onTap: () => onSceneSelected(index),
+                ),
+                if (index < journeyScenes.length - 1) const SizedBox(height: 8),
+              ],
+            ],
+          );
+        }
         return ClipRRect(
+          key: const Key('regular-map-layout'),
           borderRadius: BorderRadius.circular(20),
           child: SizedBox(
             width: mapWidth,
@@ -652,7 +763,6 @@ class _AncientJourneyMap extends StatelessWidget {
                           complete: completedSceneIds.contains(
                             journeyScenes[index].id,
                           ),
-                          compact: mapWidth < 600,
                           onTap: () => onSceneSelected(index),
                         ),
                       ),
@@ -667,20 +777,99 @@ class _AncientJourneyMap extends StatelessWidget {
   }
 }
 
-class _MapMarkerButton extends StatelessWidget {
-  const _MapMarkerButton({
+class _MapSceneListButton extends StatelessWidget {
+  const _MapSceneListButton({
     super.key,
     required this.number,
     required this.label,
     required this.complete,
-    required this.compact,
     required this.onTap,
   });
 
   final int number;
   final String label;
   final bool complete;
-  final bool compact;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '$number번 $label${complete ? ', 완료' : ''}',
+      child: Material(
+        color: const Color(0xD91A1712),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: complete ? _gold : Colors.white.withValues(alpha: 0.16),
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 56),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: complete ? _gold : const Color(0xFF342B1E),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$number',
+                      style: TextStyle(
+                        color: complete ? const Color(0xFF241A04) : _gold,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Color(0xFFFFF1C8),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  if (complete) ...[
+                    const Icon(Icons.check_circle, size: 19, color: _gold),
+                    const SizedBox(width: 6),
+                  ],
+                  Icon(
+                    Icons.chevron_right,
+                    color: Colors.white.withValues(alpha: 0.62),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MapMarkerButton extends StatelessWidget {
+  const _MapMarkerButton({
+    super.key,
+    required this.number,
+    required this.label,
+    required this.complete,
+    required this.onTap,
+  });
+
+  final int number;
+  final String label;
+  final bool complete;
   final VoidCallback onTap;
 
   @override
@@ -698,13 +887,13 @@ class _MapMarkerButton extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(999),
           child: Padding(
-            padding: EdgeInsets.fromLTRB(4, 4, compact ? 7 : 10, 4),
+            padding: const EdgeInsets.fromLTRB(4, 4, 10, 4),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: compact ? 23 : 28,
-                  height: compact ? 23 : 28,
+                  width: 28,
+                  height: 28,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: complete ? _gold : const Color(0xFF342B1E),
@@ -714,22 +903,22 @@ class _MapMarkerButton extends StatelessWidget {
                     '$number',
                     style: TextStyle(
                       color: complete ? const Color(0xFF241A04) : _gold,
-                      fontSize: compact ? 9 : 12,
+                      fontSize: 12,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
-                SizedBox(width: compact ? 4 : 7),
+                const SizedBox(width: 7),
                 Text(
                   label,
                   style: const TextStyle(
                     color: Color(0xFFFFF1C8),
                     fontWeight: FontWeight.w800,
-                  ).copyWith(fontSize: compact ? 8 : 11),
+                  ).copyWith(fontSize: 11),
                 ),
                 if (complete) ...[
-                  SizedBox(width: compact ? 3 : 5),
-                  Icon(Icons.check, size: compact ? 10 : 14, color: _gold),
+                  const SizedBox(width: 5),
+                  const Icon(Icons.check, size: 14, color: _gold),
                 ],
               ],
             ),
@@ -767,10 +956,12 @@ class JourneyScreen extends StatefulWidget {
     required this.completedSceneIds,
     required this.selectedChoices,
     required this.soundOn,
+    required this.isFullscreen,
     required this.onProgress,
     required this.onSelection,
     required this.onAudioChanged,
     required this.onToggleSound,
+    required this.onToggleFullscreen,
     required this.onBackToOverview,
     required this.onReset,
   });
@@ -779,10 +970,12 @@ class JourneyScreen extends StatefulWidget {
   final Set<String> completedSceneIds;
   final Map<String, int> selectedChoices;
   final bool soundOn;
+  final bool isFullscreen;
   final ValueChanged<String> onProgress;
   final void Function(String sceneId, int choiceIndex) onSelection;
   final void Function(String asset, bool subdued) onAudioChanged;
   final VoidCallback onToggleSound;
+  final void Function(BuildContext) onToggleFullscreen;
   final VoidCallback onBackToOverview;
   final VoidCallback onReset;
 
@@ -1074,8 +1267,10 @@ class _JourneyScreenState extends State<JourneyScreen> {
                           completedSceneIds: widget.completedSceneIds,
                           selectedChoices: widget.selectedChoices,
                           soundOn: widget.soundOn,
+                          isFullscreen: widget.isFullscreen,
                           onBack: _goBack,
                           onToggleSound: widget.onToggleSound,
+                          onToggleFullscreen: widget.onToggleFullscreen,
                           onReset: widget.onReset,
                         ),
                       Expanded(
@@ -1206,8 +1401,10 @@ class _JourneyHeader extends StatelessWidget {
     required this.completedSceneIds,
     required this.selectedChoices,
     required this.soundOn,
+    required this.isFullscreen,
     required this.onBack,
     required this.onToggleSound,
+    required this.onToggleFullscreen,
     required this.onReset,
   });
 
@@ -1216,8 +1413,10 @@ class _JourneyHeader extends StatelessWidget {
   final Set<String> completedSceneIds;
   final Map<String, int> selectedChoices;
   final bool soundOn;
+  final bool isFullscreen;
   final VoidCallback onBack;
   final VoidCallback onToggleSound;
+  final void Function(BuildContext) onToggleFullscreen;
   final VoidCallback onReset;
 
   String get _stepLabel => switch (step) {
@@ -1232,119 +1431,160 @@ class _JourneyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 12, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    final status = step == JourneyStep.summary
+        ? '여정 완료'
+        : '${sceneIndex + 1} / ${journeyScenes.length} · $_stepLabel';
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 560;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 12, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (step != JourneyStep.summary)
-                IconButton(
-                  key: const Key('back-step'),
-                  tooltip: '이전 화면',
-                  onPressed: onBack,
-                  icon: const Icon(Icons.arrow_back),
-                ),
-              const _Brand(compact: true),
-              const Spacer(),
-              Text(
-                step == JourneyStep.summary
-                    ? '여정 완료'
-                    : '${sceneIndex + 1} / ${journeyScenes.length} · $_stepLabel',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.82),
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              IconButton(
-                key: const Key('open-journey-log'),
-                tooltip: '나의 여정',
-                onPressed: () => showModalBottomSheet<void>(
-                  context: context,
-                  backgroundColor: const Color(0xFF151922),
-                  showDragHandle: true,
-                  isScrollControlled: true,
-                  builder: (context) => _JourneyLogSheet(
-                    selectedChoices: selectedChoices,
-                    completedSceneIds: completedSceneIds,
-                  ),
-                ),
-                icon: const Icon(Icons.route),
-              ),
-              IconButton(
-                key: const Key('toggle-sound'),
-                tooltip: soundOn ? '소리 끄기' : '소리 켜기',
-                onPressed: onToggleSound,
-                icon: Icon(soundOn ? Icons.volume_up : Icons.volume_off),
-              ),
-              IconButton(
-                tooltip: '여정 초기화',
-                onPressed: onReset,
-                icon: const Icon(Icons.restart_alt),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              for (var index = 0; index < journeyScenes.length; index++) ...[
-                Expanded(
-                  child: Semantics(
-                    label:
-                        '${index + 1}번 장면, '
-                        '${completedSceneIds.contains(journeyScenes[index].id)
-                            ? '완료'
-                            : index == sceneIndex && step != JourneyStep.summary
-                            ? '진행 중'
-                            : '미완료'}',
-                    child: AnimatedContainer(
-                      key: Key('scene-progress-${index + 1}'),
-                      duration: const Duration(milliseconds: 240),
-                      height: index == sceneIndex && step != JourneyStep.summary
-                          ? 7
-                          : 5,
-                      decoration: BoxDecoration(
-                        color:
-                            completedSceneIds.contains(journeyScenes[index].id)
-                            ? _gold
-                            : index == sceneIndex && step != JourneyStep.summary
-                            ? _gold.withValues(alpha: 0.65)
-                            : Colors.white.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(999),
+              Row(
+                children: [
+                  if (step != JourneyStep.summary)
+                    IconButton(
+                      key: const Key('back-step'),
+                      tooltip: '이전 화면',
+                      onPressed: onBack,
+                      icon: const Icon(Icons.arrow_back),
+                    ),
+                  const _Brand(compact: true),
+                  const Spacer(),
+                  if (!compact)
+                    Text(
+                      status,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
+                  IconButton(
+                    key: const Key('open-journey-log'),
+                    tooltip: '나의 여정',
+                    onPressed: () => showModalBottomSheet<void>(
+                      context: context,
+                      backgroundColor: const Color(0xFF151922),
+                      showDragHandle: true,
+                      isScrollControlled: true,
+                      builder: (context) => _JourneyLogSheet(
+                        selectedChoices: selectedChoices,
+                        completedSceneIds: completedSceneIds,
+                      ),
+                    ),
+                    icon: const Icon(Icons.route),
                   ),
+                  IconButton(
+                    key: const Key('toggle-sound'),
+                    tooltip: soundOn ? '소리 끄기' : '소리 켜기',
+                    onPressed: onToggleSound,
+                    icon: Icon(soundOn ? Icons.volume_up : Icons.volume_off),
+                  ),
+                  _FullscreenButton(
+                    key: const Key('toggle-fullscreen'),
+                    isFullscreen: isFullscreen,
+                    onPressed: () => onToggleFullscreen(context),
+                  ),
+                  if (!compact)
+                    IconButton(
+                      tooltip: '여정 초기화',
+                      onPressed: onReset,
+                      icon: const Icon(Icons.restart_alt),
+                    ),
+                ],
+              ),
+              if (compact) ...[
+                Row(
+                  children: [
+                    Text(
+                      status,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      tooltip: '여정 초기화',
+                      onPressed: onReset,
+                      icon: const Icon(Icons.restart_alt),
+                    ),
+                  ],
                 ),
-                if (index < journeyScenes.length - 1) const SizedBox(width: 4),
               ],
-            ],
-          ),
-          const SizedBox(height: 7),
-          Row(
-            children: [
-              if (step != JourneyStep.summary)
-                Text(
-                  '현재 선택 · ${_choiceTag(journeyScenes[sceneIndex])}',
-                  key: const Key('current-choice-status'),
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.68),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  for (
+                    var index = 0;
+                    index < journeyScenes.length;
+                    index++
+                  ) ...[
+                    Expanded(
+                      child: Semantics(
+                        label:
+                            '${index + 1}번 장면, '
+                            '${completedSceneIds.contains(journeyScenes[index].id)
+                                ? '완료'
+                                : index == sceneIndex && step != JourneyStep.summary
+                                ? '진행 중'
+                                : '미완료'}',
+                        child: AnimatedContainer(
+                          key: Key('scene-progress-${index + 1}'),
+                          duration: const Duration(milliseconds: 240),
+                          height:
+                              index == sceneIndex && step != JourneyStep.summary
+                              ? 7
+                              : 5,
+                          decoration: BoxDecoration(
+                            color:
+                                completedSceneIds.contains(
+                                  journeyScenes[index].id,
+                                )
+                                ? _gold
+                                : index == sceneIndex &&
+                                      step != JourneyStep.summary
+                                ? _gold.withValues(alpha: 0.65)
+                                : Colors.white.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (index < journeyScenes.length - 1)
+                      const SizedBox(width: 4),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 7),
+              Row(
+                children: [
+                  if (step != JourneyStep.summary)
+                    Text(
+                      '현재 선택 · ${_choiceTag(journeyScenes[sceneIndex])}',
+                      key: const Key('current-choice-status'),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.68),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  const Spacer(),
+                  Text(
+                    '${completedSceneIds.length}개 완료',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.52),
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-              const Spacer(),
-              Text(
-                '${completedSceneIds.length}개 완료',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.52),
-                  fontSize: 12,
-                ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -2494,6 +2734,76 @@ class _StepPanel extends StatelessWidget {
           const SizedBox(height: 24),
           ...children,
         ],
+      ),
+    );
+  }
+}
+
+class _FullscreenButton extends StatelessWidget {
+  const _FullscreenButton({
+    super.key,
+    required this.isFullscreen,
+    required this.onPressed,
+    this.filled = false,
+  });
+
+  final bool isFullscreen;
+  final VoidCallback onPressed;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = Icon(isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen);
+    final tooltip = isFullscreen ? '전체화면 종료' : '전체화면';
+    if (filled) {
+      return IconButton.filledTonal(
+        tooltip: tooltip,
+        onPressed: onPressed,
+        icon: icon,
+      );
+    }
+    return IconButton(tooltip: tooltip, onPressed: onPressed, icon: icon);
+  }
+}
+
+class _FullscreenHelpSheet extends StatelessWidget {
+  const _FullscreenHelpSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        key: const Key('fullscreen-help'),
+        padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '전체화면으로 감상하기',
+              style: Theme.of(context).textTheme.headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '이 브라우저에서는 웹 전체화면을 바로 시작할 수 없습니다. '
+              'iPhone Safari의 공유 버튼에서 ‘홈 화면에 추가’와 '
+              '‘웹 앱으로 열기’를 선택하면 브라우저 도구 막대 없이 이용할 수 있습니다.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                height: 1.65,
+                color: Colors.white.withValues(alpha: 0.82),
+              ),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('확인'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

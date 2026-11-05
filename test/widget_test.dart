@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:godflix/ambient_audio.dart';
 import 'package:godflix/data/scenes.dart';
+import 'package:godflix/fullscreen_controller.dart';
 import 'package:godflix/godflix_app.dart';
 import 'package:godflix/progress_store.dart';
 
@@ -305,6 +306,101 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('compact map shows the map above eleven ordered episodes', (
+    tester,
+  ) async {
+    _setViewport(tester, const Size(390, 844));
+    await tester.pumpWidget(GodflixApp(progressStore: ProgressStore()));
+
+    await tester.tap(find.byKey(const Key('start-journey')));
+    await _pumpDeparture(tester);
+    await tester.tap(find.byKey(const Key('skip-overview-intro')));
+    await _pumpTransition(tester);
+
+    expect(find.byKey(const Key('compact-map-layout')), findsOneWidget);
+    expect(find.byKey(const Key('regular-map-layout')), findsNothing);
+    expect(find.byKey(const Key('compact-map-image')), findsOneWidget);
+    for (var index = 0; index < journeyScenes.length; index++) {
+      expect(find.byKey(Key('map-scene-$index')), findsOneWidget);
+    }
+    expect(
+      tester.getBottomLeft(find.byKey(const Key('compact-map-image'))).dy,
+      lessThan(tester.getTopLeft(find.byKey(const Key('map-scene-0'))).dy),
+    );
+    expect(tester.takeException(), isNull);
+
+    await _tapVisible(tester, find.byKey(const Key('map-scene-10')));
+    await _pumpTransition(tester);
+    expect(
+      find.byKey(const Key('return-cinematic-background')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('skip-scene-intro')));
+    await _pumpTransition(tester);
+    expect(find.byKey(const Key('toggle-fullscreen')), findsOneWidget);
+    expect(find.text('11 / 11 · 줄거리'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('wide iPad layout keeps the positioned journey map', (
+    tester,
+  ) async {
+    _setViewport(tester, const Size(1024, 768));
+    await tester.pumpWidget(GodflixApp(progressStore: ProgressStore()));
+
+    await tester.tap(find.byKey(const Key('start-journey')));
+    await _pumpDeparture(tester);
+    await tester.tap(find.byKey(const Key('skip-overview-intro')));
+    await _pumpTransition(tester);
+
+    expect(find.byKey(const Key('regular-map-layout')), findsOneWidget);
+    expect(find.byKey(const Key('compact-map-layout')), findsNothing);
+    expect(find.byKey(const Key('map-scene-10')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('fullscreen is user-selected and tracks its exit state', (
+    tester,
+  ) async {
+    final fullscreen = FullscreenController(isSupported: true);
+    await tester.pumpWidget(
+      GodflixApp(
+        progressStore: ProgressStore(),
+        fullscreenController: fullscreen,
+      ),
+    );
+
+    expect(fullscreen.isFullscreen, isFalse);
+    await tester.tap(find.byKey(const Key('toggle-fullscreen-landing')));
+    await tester.pump();
+    expect(fullscreen.isFullscreen, isTrue);
+    expect(find.byIcon(Icons.fullscreen_exit), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('toggle-fullscreen-landing')));
+    await tester.pump();
+    expect(fullscreen.isFullscreen, isFalse);
+    expect(find.byIcon(Icons.fullscreen), findsOneWidget);
+  });
+
+  testWidgets('unsupported fullscreen shows web app guidance', (tester) async {
+    await tester.pumpWidget(GodflixApp(progressStore: ProgressStore()));
+
+    await tester.tap(find.byKey(const Key('toggle-fullscreen-landing')));
+    await _pumpTransition(tester);
+
+    expect(find.byKey(const Key('fullscreen-help')), findsOneWidget);
+    expect(find.textContaining('홈 화면에 추가'), findsOneWidget);
+  });
+}
+
+void _setViewport(WidgetTester tester, Size size) {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(() {
+    tester.view.resetDevicePixelRatio();
+    tester.view.resetPhysicalSize();
   });
 }
 
