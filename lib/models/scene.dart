@@ -17,6 +17,7 @@ class JourneyScene {
     required this.hook,
     required this.story,
     required this.question,
+    required this.discussion,
     required this.imageAsset,
     this.audioAsset = 'assets/audio/sea_wind.wav',
     required this.scriptureReference,
@@ -33,6 +34,7 @@ class JourneyScene {
   final String hook;
   final String story;
   final String question;
+  final String discussion;
   final String imageAsset;
   final String audioAsset;
   final String scriptureReference;
@@ -45,13 +47,8 @@ class JourneyScene {
 }
 
 class JourneyAnswer {
-  const JourneyAnswer({
-    required this.scene,
-    required this.choice,
-    required this.reflection,
-  });
+  const JourneyAnswer({required this.scene, required this.reflection});
 
   final JourneyScene scene;
-  final JourneyChoice choice;
   final String reflection;
 }

@@ -30,7 +30,6 @@ class _GodflixAppState extends State<GodflixApp> {
   late final AmbientAudio _ambientAudio;
   late final FullscreenController _fullscreenController;
   late Set<String> _completedSceneIds;
-  late Map<String, int> _selectedChoices;
   int _selectedSceneIndex = 0;
   bool _soundOn = false;
   bool _journeyStarted = false;
@@ -61,7 +60,6 @@ class _GodflixAppState extends State<GodflixApp> {
         _progressStore.writeCompletedSceneId(sceneId);
       }
     }
-    _selectedChoices = _progressStore.readSelections();
   }
 
   void _beginDeparture() {
@@ -90,12 +88,6 @@ class _GodflixAppState extends State<GodflixApp> {
   void _recordProgress(String sceneId) {
     _completedSceneIds = {..._completedSceneIds, sceneId};
     _progressStore.writeCompletedSceneId(sceneId);
-    setState(() {});
-  }
-
-  void _recordSelection(String sceneId, int choiceIndex) {
-    _selectedChoices = {..._selectedChoices, sceneId: choiceIndex};
-    _progressStore.writeSelection(sceneId, choiceIndex);
     setState(() {});
   }
 
@@ -129,7 +121,6 @@ class _GodflixAppState extends State<GodflixApp> {
     _ambientAudio.pause();
     setState(() {
       _completedSceneIds = {};
-      _selectedChoices = {};
       _selectedSceneIndex = 0;
       _journeyStarted = false;
       _storySeen = false;
@@ -226,7 +217,6 @@ class _GodflixAppState extends State<GodflixApp> {
           ? StoryOverviewScreen(
               onSceneSelected: _continueFromStory,
               completedSceneIds: _completedSceneIds,
-              selectedChoices: _selectedChoices,
               showImmediately: _mapSeen,
               soundOn: _soundOn,
               isFullscreen: _fullscreenController.isFullscreen,
@@ -236,11 +226,9 @@ class _GodflixAppState extends State<GodflixApp> {
           : JourneyScreen(
               initialSceneIndex: _selectedSceneIndex,
               completedSceneIds: _completedSceneIds,
-              selectedChoices: _selectedChoices,
               soundOn: _soundOn,
               isFullscreen: _fullscreenController.isFullscreen,
               onProgress: _recordProgress,
-              onSelection: _recordSelection,
               onAudioChanged: _changeAudio,
               onToggleSound: _toggleSound,
               onToggleFullscreen: _toggleFullscreen,
@@ -378,7 +366,7 @@ class _LandingScreenState extends State<LandingScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              '이야기 속 선택을 지나 말씀을 만나고,\n오늘의 삶에 적용할 한 걸음을 정합니다.',
+                              '이야기 속 질문을 함께 나누고 말씀을 만나,\n오늘의 삶에 적용할 한 걸음을 정합니다.',
                               style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     height: 1.55,
@@ -455,7 +443,6 @@ class StoryOverviewScreen extends StatefulWidget {
     super.key,
     required this.onSceneSelected,
     required this.completedSceneIds,
-    required this.selectedChoices,
     required this.showImmediately,
     required this.soundOn,
     required this.isFullscreen,
@@ -465,7 +452,6 @@ class StoryOverviewScreen extends StatefulWidget {
 
   final ValueChanged<int> onSceneSelected;
   final Set<String> completedSceneIds;
-  final Map<String, int> selectedChoices;
   final bool showImmediately;
   final bool soundOn;
   final bool isFullscreen;
@@ -571,8 +557,6 @@ class _StoryOverviewScreenState extends State<StoryOverviewScreen> {
                                               isScrollControlled: true,
                                               builder: (context) =>
                                                   _JourneyLogSheet(
-                                                    selectedChoices:
-                                                        widget.selectedChoices,
                                                     completedSceneIds: widget
                                                         .completedSceneIds,
                                                   ),
@@ -932,7 +916,7 @@ class _MapMarkerButton extends StatelessWidget {
 enum JourneyStep {
   background,
   story,
-  choice,
+  discussion,
   scripture,
   reflection,
   complete,
@@ -954,11 +938,9 @@ class JourneyScreen extends StatefulWidget {
     super.key,
     required this.initialSceneIndex,
     required this.completedSceneIds,
-    required this.selectedChoices,
     required this.soundOn,
     required this.isFullscreen,
     required this.onProgress,
-    required this.onSelection,
     required this.onAudioChanged,
     required this.onToggleSound,
     required this.onToggleFullscreen,
@@ -968,11 +950,9 @@ class JourneyScreen extends StatefulWidget {
 
   final int initialSceneIndex;
   final Set<String> completedSceneIds;
-  final Map<String, int> selectedChoices;
   final bool soundOn;
   final bool isFullscreen;
   final ValueChanged<String> onProgress;
-  final void Function(String sceneId, int choiceIndex) onSelection;
   final void Function(String asset, bool subdued) onAudioChanged;
   final VoidCallback onToggleSound;
   final void Function(BuildContext) onToggleFullscreen;
@@ -987,7 +967,6 @@ class _JourneyScreenState extends State<JourneyScreen> {
   late int _sceneIndex;
   late JourneyStep _step;
   Timer? _sceneRevealTimer;
-  JourneyChoice? _selectedChoice;
   final _reflectionController = TextEditingController();
   final _answers = <JourneyAnswer>[];
 
@@ -1073,7 +1052,6 @@ class _JourneyScreenState extends State<JourneyScreen> {
     super.initState();
     _sceneIndex = widget.initialSceneIndex;
     _step = JourneyStep.background;
-    _selectedChoice = _savedChoiceFor(_sceneIndex);
     if (_step == JourneyStep.background) _scheduleSceneStory();
   }
 
@@ -1115,11 +1093,11 @@ class _JourneyScreenState extends State<JourneyScreen> {
       case JourneyStep.story:
         widget.onBackToOverview();
         return;
-      case JourneyStep.choice:
+      case JourneyStep.discussion:
         _goTo(JourneyStep.story);
         return;
       case JourneyStep.scripture:
-        _goTo(JourneyStep.choice);
+        _goTo(JourneyStep.discussion);
         return;
       case JourneyStep.reflection:
         _goTo(JourneyStep.scripture);
@@ -1133,30 +1111,11 @@ class _JourneyScreenState extends State<JourneyScreen> {
     }
   }
 
-  void _selectChoice(JourneyChoice choice) {
-    widget.onSelection(_scene.id, _scene.choices.indexOf(choice));
-    setState(() => _selectedChoice = choice);
-  }
-
-  JourneyChoice? _savedChoiceFor(int sceneIndex) {
-    final scene = journeyScenes[sceneIndex];
-    final choiceIndex = widget.selectedChoices[scene.id];
-    if (choiceIndex == null ||
-        choiceIndex < 0 ||
-        choiceIndex >= scene.choices.length) {
-      return null;
-    }
-    return scene.choices[choiceIndex];
-  }
-
   void _completeScene() {
-    final choice = _selectedChoice;
-    if (choice == null) return;
     _answers.removeWhere((answer) => answer.scene.id == _scene.id);
     _answers.add(
       JourneyAnswer(
         scene: _scene,
-        choice: choice,
         reflection: _reflectionController.text.trim(),
       ),
     );
@@ -1171,7 +1130,6 @@ class _JourneyScreenState extends State<JourneyScreen> {
     }
     setState(() {
       _sceneIndex += 1;
-      _selectedChoice = _savedChoiceFor(_sceneIndex);
       _reflectionController.clear();
       _step = JourneyStep.background;
     });
@@ -1184,7 +1142,7 @@ class _JourneyScreenState extends State<JourneyScreen> {
     final showScene = _step != JourneyStep.summary;
     final backgroundOnly = _step == JourneyStep.background;
     final brightenScene =
-        _step == JourneyStep.story || _step == JourneyStep.choice;
+        _step == JourneyStep.story || _step == JourneyStep.discussion;
     final sceneVisual = _sceneVisual(showScene ? _scene.id : 'summary');
     return Scaffold(
       body: Stack(
@@ -1265,7 +1223,6 @@ class _JourneyScreenState extends State<JourneyScreen> {
                           sceneIndex: _sceneIndex,
                           step: _step,
                           completedSceneIds: widget.completedSceneIds,
-                          selectedChoices: widget.selectedChoices,
                           soundOn: widget.soundOn,
                           isFullscreen: widget.isFullscreen,
                           onBack: _goBack,
@@ -1353,21 +1310,16 @@ class _JourneyScreenState extends State<JourneyScreen> {
       JourneyStep.story => _SceneStoryStep(
         key: ValueKey('${_scene.id}-story'),
         scene: _scene,
-        onNext: () => _goTo(JourneyStep.choice),
+        onNext: () => _goTo(JourneyStep.discussion),
       ),
-      JourneyStep.choice => _ChoiceStep(
-        key: ValueKey('${_scene.id}-choice'),
+      JourneyStep.discussion => _DiscussionStep(
+        key: ValueKey('${_scene.id}-discussion'),
         scene: _scene,
-        selectedChoice: _selectedChoice,
-        onSelect: _selectChoice,
-        onNext: _selectedChoice == null
-            ? null
-            : () => _goTo(JourneyStep.scripture),
+        onNext: () => _goTo(JourneyStep.scripture),
       ),
       JourneyStep.scripture => _ScriptureStep(
         key: ValueKey('${_scene.id}-scripture'),
         scene: _scene,
-        choice: _selectedChoice!,
         onNext: () => _goTo(JourneyStep.reflection),
       ),
       JourneyStep.reflection => _ReflectionStep(
@@ -1379,7 +1331,6 @@ class _JourneyScreenState extends State<JourneyScreen> {
       JourneyStep.complete => _CompleteStep(
         key: ValueKey('${_scene.id}-complete'),
         scene: _scene,
-        choice: _selectedChoice!,
         reflection: _reflectionController.text.trim(),
         isLast: _sceneIndex == journeyScenes.length - 1,
         onNext: _nextScene,
@@ -1387,7 +1338,6 @@ class _JourneyScreenState extends State<JourneyScreen> {
       JourneyStep.summary => _SummaryStep(
         key: const ValueKey('summary'),
         answers: _answers,
-        selectedChoices: widget.selectedChoices,
         onReset: widget.onReset,
       ),
     };
@@ -1399,7 +1349,6 @@ class _JourneyHeader extends StatelessWidget {
     required this.sceneIndex,
     required this.step,
     required this.completedSceneIds,
-    required this.selectedChoices,
     required this.soundOn,
     required this.isFullscreen,
     required this.onBack,
@@ -1411,7 +1360,6 @@ class _JourneyHeader extends StatelessWidget {
   final int sceneIndex;
   final JourneyStep step;
   final Set<String> completedSceneIds;
-  final Map<String, int> selectedChoices;
   final bool soundOn;
   final bool isFullscreen;
   final VoidCallback onBack;
@@ -1422,7 +1370,7 @@ class _JourneyHeader extends StatelessWidget {
   String get _stepLabel => switch (step) {
     JourneyStep.background => '장면',
     JourneyStep.story => '줄거리',
-    JourneyStep.choice => '선택',
+    JourneyStep.discussion => '함께 나눔',
     JourneyStep.scripture => '말씀',
     JourneyStep.reflection => '적용',
     JourneyStep.complete => '기록',
@@ -1470,7 +1418,6 @@ class _JourneyHeader extends StatelessWidget {
                       showDragHandle: true,
                       isScrollControlled: true,
                       builder: (context) => _JourneyLogSheet(
-                        selectedChoices: selectedChoices,
                         completedSceneIds: completedSceneIds,
                       ),
                     ),
@@ -1563,8 +1510,8 @@ class _JourneyHeader extends StatelessWidget {
                 children: [
                   if (step != JourneyStep.summary)
                     Text(
-                      '현재 선택 · ${_choiceTag(journeyScenes[sceneIndex])}',
-                      key: const Key('current-choice-status'),
+                      '현재 단계 · $_stepLabel',
+                      key: const Key('current-stage-status'),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.68),
                         fontSize: 12,
@@ -1587,25 +1534,11 @@ class _JourneyHeader extends StatelessWidget {
       },
     );
   }
-
-  String _choiceTag(JourneyScene scene) {
-    final choiceIndex = selectedChoices[scene.id];
-    if (choiceIndex == null ||
-        choiceIndex < 0 ||
-        choiceIndex >= scene.choices.length) {
-      return '미선택';
-    }
-    return scene.choices[choiceIndex].tag;
-  }
 }
 
 class _JourneyLogSheet extends StatelessWidget {
-  const _JourneyLogSheet({
-    required this.selectedChoices,
-    required this.completedSceneIds,
-  });
+  const _JourneyLogSheet({required this.completedSceneIds});
 
-  final Map<String, int> selectedChoices;
   final Set<String> completedSceneIds;
 
   @override
@@ -1635,13 +1568,6 @@ class _JourneyLogSheet extends StatelessWidget {
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final scene = journeyScenes[index];
-                    final choiceIndex = selectedChoices[scene.id];
-                    final choice =
-                        choiceIndex != null &&
-                            choiceIndex >= 0 &&
-                            choiceIndex < scene.choices.length
-                        ? scene.choices[choiceIndex]
-                        : null;
                     return Container(
                       key: Key('journey-log-${scene.id}'),
                       padding: const EdgeInsets.all(14),
@@ -1678,9 +1604,9 @@ class _JourneyLogSheet extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  choice == null
-                                      ? '아직 선택하지 않았습니다.'
-                                      : '${choice.tag} · ${choice.label}',
+                                  completedSceneIds.contains(scene.id)
+                                      ? '말씀과 적용을 완료했습니다.'
+                                      : scene.question,
                                   style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.7),
                                     height: 1.4,
@@ -1730,127 +1656,100 @@ class _SceneStoryStep extends StatelessWidget {
           style: const TextStyle(fontSize: 17, height: 1.75),
         ),
         const SizedBox(height: 28),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: _gold.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: _gold.withValues(alpha: 0.38)),
-          ),
-          child: Text(
-            scene.question,
-            style: const TextStyle(fontSize: 17, height: 1.55),
-          ),
-        ),
-        const SizedBox(height: 20),
-        _PrimaryButton(
+        _QuestionActionCard(
           key: const Key('open-choices'),
-          label: '어떻게 할까요?',
-          icon: Icons.help_outline,
-          onPressed: onNext,
+          question: scene.question,
+          onTap: onNext,
         ),
       ],
     );
   }
 }
 
-class _ChoiceStep extends StatelessWidget {
-  const _ChoiceStep({
+class _QuestionActionCard extends StatefulWidget {
+  const _QuestionActionCard({
     super.key,
-    required this.scene,
-    required this.selectedChoice,
-    required this.onSelect,
-    required this.onNext,
-  });
-
-  final JourneyScene scene;
-  final JourneyChoice? selectedChoice;
-  final ValueChanged<JourneyChoice> onSelect;
-  final VoidCallback? onNext;
-
-  @override
-  Widget build(BuildContext context) {
-    return _StepPanel(
-      eyebrow: '나의 선택',
-      title: '어떻게 할까요?',
-      children: [
-        Text(
-          scene.question,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(height: 1.6),
-        ),
-        const SizedBox(height: 20),
-        Column(
-          key: const Key('scene-choices'),
-          children: [
-            for (final choice in scene.choices) ...[
-              _ChoiceCard(
-                choice: choice,
-                selected: identical(choice, selectedChoice),
-                onTap: () => onSelect(choice),
-              ),
-              const SizedBox(height: 12),
-            ],
-            const SizedBox(height: 12),
-            _PrimaryButton(
-              key: const Key('open-scripture'),
-              label: '말씀으로 이동',
-              icon: Icons.menu_book,
-              onPressed: onNext,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _ChoiceCard extends StatelessWidget {
-  const _ChoiceCard({
-    required this.choice,
-    required this.selected,
+    required this.question,
     required this.onTap,
   });
 
-  final JourneyChoice choice;
-  final bool selected;
+  final String question;
   final VoidCallback onTap;
 
   @override
+  State<_QuestionActionCard> createState() => _QuestionActionCardState();
+}
+
+class _QuestionActionCardState extends State<_QuestionActionCard> {
+  bool _highlighted = false;
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
+    final active = _highlighted || _hovered;
+
     return Semantics(
-      selected: selected,
       button: true,
-      child: Material(
-        color: selected
-            ? _gold.withValues(alpha: 0.17)
-            : Colors.white.withValues(alpha: 0.07),
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            color: selected ? _gold : Colors.white.withValues(alpha: 0.18),
-            width: selected ? 2 : 1,
+      child: AnimatedScale(
+        scale: _highlighted ? 0.985 : 1,
+        duration: const Duration(milliseconds: 110),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: _gold.withValues(alpha: active ? 0.18 : 0.1),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: _gold.withValues(alpha: active ? 0.72 : 0.38),
+            ),
+            boxShadow: active
+                ? [
+                    BoxShadow(
+                      color: _gold.withValues(alpha: 0.14),
+                      blurRadius: 22,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : const [],
           ),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                Icon(
-                  selected ? Icons.check_circle : Icons.circle_outlined,
-                  color: selected ? _gold : Colors.white70,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: widget.onTap,
+              onHighlightChanged: (value) {
+                if (_highlighted == value) return;
+                setState(() => _highlighted = value);
+              },
+              onHover: (value) {
+                if (_hovered == value) return;
+                setState(() => _hovered = value);
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.question,
+                        style: const TextStyle(fontSize: 17, height: 1.55),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    AnimatedSlide(
+                      offset: active ? const Offset(0.16, 0) : Offset.zero,
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      child: Icon(
+                        Icons.arrow_forward_rounded,
+                        color: _gold.withValues(alpha: active ? 1 : 0.72),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    choice.label,
-                    style: const TextStyle(fontSize: 16, height: 1.4),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -1859,16 +1758,43 @@ class _ChoiceCard extends StatelessWidget {
   }
 }
 
-class _ScriptureStep extends StatelessWidget {
-  const _ScriptureStep({
-    super.key,
-    required this.scene,
-    required this.choice,
-    required this.onNext,
-  });
+class _DiscussionStep extends StatelessWidget {
+  const _DiscussionStep({super.key, required this.scene, required this.onNext});
 
   final JourneyScene scene;
-  final JourneyChoice choice;
+  final VoidCallback onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    return _StepPanel(
+      eyebrow: '함께 나누기',
+      title: scene.question,
+      children: [
+        Text(
+          scene.discussion,
+          key: const Key('scene-discussion'),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: 18,
+            height: 1.85,
+          ),
+        ),
+        const SizedBox(height: 30),
+        _PrimaryButton(
+          key: const Key('open-scripture'),
+          label: '말씀으로 이동',
+          icon: Icons.menu_book,
+          onPressed: onNext,
+        ),
+      ],
+    );
+  }
+}
+
+class _ScriptureStep extends StatelessWidget {
+  const _ScriptureStep({super.key, required this.scene, required this.onNext});
+
+  final JourneyScene scene;
   final VoidCallback onNext;
 
   @override
@@ -1897,17 +1823,6 @@ class _ScriptureStep extends StatelessWidget {
         Text(
           scene.meditation,
           style: const TextStyle(fontSize: 16, height: 1.75),
-        ),
-        const SizedBox(height: 20),
-        Text(
-          '선택과 연결된 적용',
-          style: Theme.of(context).textTheme.titleMedium
-              ?.copyWith(color: _gold, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          choice.application,
-          style: const TextStyle(fontSize: 16, height: 1.65),
         ),
         const SizedBox(height: 28),
         _PrimaryButton(
@@ -2080,14 +1995,12 @@ class _CompleteStep extends StatelessWidget {
   const _CompleteStep({
     super.key,
     required this.scene,
-    required this.choice,
     required this.reflection,
     required this.isLast,
     required this.onNext,
   });
 
   final JourneyScene scene;
-  final JourneyChoice choice;
   final String reflection;
   final bool isLast;
   final VoidCallback onNext;
@@ -2098,8 +2011,7 @@ class _CompleteStep extends StatelessWidget {
       eyebrow: '장면 완료',
       title: scene.title,
       children: [
-        _SummaryRow(label: '선택', value: choice.label),
-        _SummaryRow(label: '주제', value: choice.tag),
+        _SummaryRow(label: '나눔 질문', value: scene.question),
         _SummaryRow(label: '말씀', value: scene.scriptureReference),
         if (reflection.isNotEmpty)
           _SummaryRow(label: '나의 적용', value: reflection),
@@ -2116,41 +2028,25 @@ class _CompleteStep extends StatelessWidget {
 }
 
 class _SummaryStep extends StatelessWidget {
-  const _SummaryStep({
-    super.key,
-    required this.answers,
-    required this.selectedChoices,
-    required this.onReset,
-  });
+  const _SummaryStep({super.key, required this.answers, required this.onReset});
 
   final List<JourneyAnswer> answers;
-  final Map<String, int> selectedChoices;
   final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context) {
-    final savedChoices = <(JourneyScene, JourneyChoice)>[];
-    for (final scene in journeyScenes) {
-      final choiceIndex = selectedChoices[scene.id];
-      if (choiceIndex != null &&
-          choiceIndex >= 0 &&
-          choiceIndex < scene.choices.length) {
-        savedChoices.add((scene, scene.choices[choiceIndex]));
-      }
-    }
-
     return _StepPanel(
       eyebrow: 'JOURNEY COMPLETE',
       title: '다시 이타카를 향해',
       children: [
         Text(
-          savedChoices.isEmpty
-              ? '두 장면의 여정을 완료했습니다. 각 장면에서 만난 말씀과 적용을 다시 떠올려 보세요.'
-              : '당신이 지나온 선택과 적용을 한곳에 모았습니다.',
+          answers.isEmpty
+              ? '각 장면에서 만난 질문과 말씀, 적용을 다시 떠올려 보세요.'
+              : '당신이 지나온 질문과 말씀, 적용을 한곳에 모았습니다.',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(height: 1.6),
         ),
         const SizedBox(height: 20),
-        for (final savedChoice in savedChoices) ...[
+        for (final answer in answers) ...[
           Container(
             width: double.infinity,
             margin: const EdgeInsets.only(bottom: 12),
@@ -2164,19 +2060,19 @@ class _SummaryStep extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  savedChoice.$1.title,
+                  answer.scene.title,
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 8),
-                Text('${savedChoice.$2.tag} · ${savedChoice.$2.label}'),
+                Text(answer.scene.question),
                 const SizedBox(height: 6),
                 Text(
-                  savedChoice.$1.scriptureReference,
+                  answer.scene.scriptureReference,
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
                 ),
-                if (_reflectionFor(savedChoice.$1.id).isNotEmpty) ...[
+                if (answer.reflection.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text(_reflectionFor(savedChoice.$1.id)),
+                  Text(answer.reflection),
                 ],
               ],
             ),
@@ -2191,13 +2087,6 @@ class _SummaryStep extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  String _reflectionFor(String sceneId) {
-    for (final answer in answers) {
-      if (answer.scene.id == sceneId) return answer.reflection;
-    }
-    return '';
   }
 }
 
