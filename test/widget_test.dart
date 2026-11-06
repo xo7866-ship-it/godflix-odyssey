@@ -202,6 +202,7 @@ void main() {
         .toSet();
     expect(landingAssets, contains('assets/images/landing_ithaca_plate.png'));
     expect(landingAssets, contains('assets/images/landing_ithaca_ship.png'));
+    expect(landingAssets, contains('assets/images/godflix_logo_g_v1.png'));
     expect(find.text('여정 시작하기'), findsOneWidget);
     await tester.tap(find.byKey(const Key('start-journey')));
     await tester.pump();
@@ -245,9 +246,13 @@ void main() {
 
     expect(find.byKey(const Key('scene-story')), findsNothing);
     expect(find.byKey(const Key('scene-discussion')), findsNothing);
+    expect(find.text('왕이 없는 섬, 이타카'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
+    expect(find.byKey(const Key('scene-story')), findsNothing);
+    expect(find.byKey(const Key('continue-scene-intro')), findsOneWidget);
     await _revealScene(tester);
 
-    expect(find.text('왕이 없는 섬, 이타카'), findsOneWidget);
+    expect(find.text('왕이 없는 섬, 이타카').hitTestable(), findsNothing);
     expect(find.byKey(const Key('scene-story')), findsOneWidget);
     expect(find.byKey(const Key('scene-discussion')), findsNothing);
     expect(find.byKey(const Key('open-choices')), findsOneWidget);
@@ -296,7 +301,8 @@ void main() {
     await _tapVisible(tester, find.byKey(const Key('next-scene')));
     await _pumpTransition(tester);
     await _revealScene(tester);
-    expect(find.text('철옹성을 무너뜨린 속임수, 트로이 목마'), findsOneWidget);
+    expect(find.byKey(const Key('scene-story')), findsOneWidget);
+    expect(find.text('요새를 무너뜨리는 ‘바늘구멍’'), findsOneWidget);
   });
 
   testWidgets('saved progress resumes at the second scene', (tester) async {
@@ -315,7 +321,7 @@ void main() {
     await _pumpTransition(tester);
     await _revealScene(tester);
 
-    expect(find.text('철옹성을 무너뜨린 속임수, 트로이 목마'), findsOneWidget);
+    expect(find.text('요새를 무너뜨리는 ‘바늘구멍’'), findsOneWidget);
     expect(find.text('2 / 11 · 줄거리'), findsOneWidget);
     expect(find.byKey(const Key('current-stage-status')), findsOneWidget);
     expect(find.byKey(const Key('scene-progress-11')), findsOneWidget);
@@ -368,7 +374,7 @@ void main() {
     await _pumpTransition(tester);
     await _tapVisible(tester, find.byKey(const Key('map-scene-0')));
     await _pumpTransition(tester);
-    await tester.tap(find.byKey(const Key('skip-scene-intro')));
+    await tester.tap(find.byKey(const Key('continue-scene-intro')));
     await _pumpTransition(tester);
 
     expect(find.text('1 / 11 · 줄거리'), findsOneWidget);
@@ -436,14 +442,38 @@ void main() {
       find.byKey(const Key('return-cinematic-background')),
       findsOneWidget,
     );
-    await tester.tap(find.byKey(const Key('skip-scene-intro')));
+    await tester.tap(find.byKey(const Key('continue-scene-intro')));
     await _pumpTransition(tester);
     expect(find.byKey(const Key('toggle-fullscreen')), findsOneWidget);
     expect(find.text('11 / 11 · 줄거리'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('wide iPad layout keeps the positioned journey map', (
+  testWidgets('compact step transitions restart at the top without a jump', (
+    tester,
+  ) async {
+    _setViewport(tester, const Size(390, 844));
+    await tester.pumpWidget(GodflixApp(progressStore: ProgressStore()));
+
+    await tester.tap(find.byKey(const Key('start-journey')));
+    await _pumpDeparture(tester);
+    await tester.tap(find.byKey(const Key('skip-overview-intro')));
+    await _pumpTransition(tester);
+    await _tapVisible(tester, find.byKey(const Key('map-scene-0')));
+    await _pumpTransition(tester);
+    await _revealScene(tester);
+    await _tapVisible(tester, find.byKey(const Key('open-choices')));
+    await _pumpTransition(tester);
+
+    final question = find
+        .text('내 삶에 하나님이 계시지 않아 생긴 어려움과 혼란이 있나요?')
+        .hitTestable();
+    expect(question, findsOneWidget);
+    expect(tester.getTopLeft(question).dy, lessThan(360));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('wide iPad keeps the map and top-aligned step transitions', (
     tester,
   ) async {
     _setViewport(tester, const Size(1024, 768));
@@ -457,6 +487,22 @@ void main() {
     expect(find.byKey(const Key('regular-map-layout')), findsOneWidget);
     expect(find.byKey(const Key('compact-map-layout')), findsNothing);
     expect(find.byKey(const Key('map-scene-10')), findsOneWidget);
+
+    await _tapVisible(tester, find.byKey(const Key('map-scene-0')));
+    await _pumpTransition(tester);
+    expect(
+      find.byKey(const Key('scene-intro-title')).hitTestable(),
+      findsOneWidget,
+    );
+    await _revealScene(tester);
+    await _tapVisible(tester, find.byKey(const Key('open-choices')));
+    await _pumpTransition(tester);
+
+    final question = find
+        .text('내 삶에 하나님이 계시지 않아 생긴 어려움과 혼란이 있나요?')
+        .hitTestable();
+    expect(question, findsOneWidget);
+    expect(tester.getTopLeft(question).dy, lessThan(360));
     expect(tester.takeException(), isNull);
   });
 
@@ -517,8 +563,8 @@ Future<void> _revealOverview(WidgetTester tester) async {
 }
 
 Future<void> _revealScene(WidgetTester tester) async {
-  await tester.pump(const Duration(seconds: 3));
-  await tester.pump(const Duration(milliseconds: 400));
+  await tester.tap(find.byKey(const Key('continue-scene-intro')));
+  await _pumpTransition(tester);
 }
 
 Future<void> _tapVisible(WidgetTester tester, Finder finder) async {

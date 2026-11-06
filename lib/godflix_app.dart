@@ -966,7 +966,6 @@ class JourneyScreen extends StatefulWidget {
 class _JourneyScreenState extends State<JourneyScreen> {
   late int _sceneIndex;
   late JourneyStep _step;
-  Timer? _sceneRevealTimer;
   final _reflectionController = TextEditingController();
   final _answers = <JourneyAnswer>[];
 
@@ -1052,27 +1051,15 @@ class _JourneyScreenState extends State<JourneyScreen> {
     super.initState();
     _sceneIndex = widget.initialSceneIndex;
     _step = JourneyStep.background;
-    if (_step == JourneyStep.background) _scheduleSceneStory();
   }
 
   @override
   void dispose() {
-    _sceneRevealTimer?.cancel();
     _reflectionController.dispose();
     super.dispose();
   }
 
-  void _scheduleSceneStory() {
-    _sceneRevealTimer?.cancel();
-    _sceneRevealTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) setState(() => _step = JourneyStep.story);
-    });
-  }
-
-  void _revealSceneNow() {
-    _sceneRevealTimer?.cancel();
-    setState(() => _step = JourneyStep.story);
-  }
+  void _startSceneStory() => _goTo(JourneyStep.story);
 
   void _goTo(JourneyStep step) {
     final subdued =
@@ -1134,7 +1121,6 @@ class _JourneyScreenState extends State<JourneyScreen> {
       _step = JourneyStep.background;
     });
     widget.onAudioChanged(_scene.audioAsset, false);
-    _scheduleSceneStory();
   }
 
   @override
@@ -1231,27 +1217,30 @@ class _JourneyScreenState extends State<JourneyScreen> {
                           onReset: widget.onReset,
                         ),
                       Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-                          child: Align(
-                            alignment: Alignment.topCenter,
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 760),
-                              child: AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 320),
-                                switchInCurve: Curves.easeOutCubic,
-                                switchOutCurve: Curves.easeInCubic,
-                                transitionBuilder: (child, animation) =>
-                                    FadeTransition(
-                                      opacity: animation,
-                                      child: SlideTransition(
-                                        position: Tween<Offset>(
-                                          begin: const Offset(0, 0.015),
-                                          end: Offset.zero,
-                                        ).animate(animation),
-                                        child: child,
-                                      ),
-                                    ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 420),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          transitionBuilder: (child, animation) =>
+                              FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(0, 0.025),
+                                    end: Offset.zero,
+                                  ).animate(animation),
+                                  child: child,
+                                ),
+                              ),
+                          child: SingleChildScrollView(
+                            key: ValueKey('${_scene.id}-${_step.name}-scroll'),
+                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 760,
+                                ),
                                 child: _buildStep(),
                               ),
                             ),
@@ -1275,22 +1264,71 @@ class _JourneyScreenState extends State<JourneyScreen> {
                   alignment: Alignment.bottomCenter,
                   child: Padding(
                     padding: const EdgeInsets.all(18),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton.filledTonal(
-                          key: const Key('background-map-back'),
-                          tooltip: '여정 지도로',
-                          onPressed: widget.onBackToOverview,
-                          icon: const Icon(Icons.map_outlined),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 760),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xC9141720),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.18),
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x88000000),
+                              blurRadius: 32,
+                              offset: Offset(0, 14),
+                            ),
+                          ],
                         ),
-                        IconButton.filledTonal(
-                          key: const Key('skip-scene-intro'),
-                          tooltip: '연출 건너뛰기',
-                          onPressed: _revealSceneNow,
-                          icon: const Icon(Icons.fast_forward),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'EPISODE ${(_sceneIndex + 1).toString().padLeft(2, '0')}',
+                              style: const TextStyle(
+                                color: _gold,
+                                fontSize: 12,
+                                letterSpacing: 1.8,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _scene.title,
+                              key: const Key('scene-intro-title'),
+                              style: Theme.of(context).textTheme.headlineMedium
+                                  ?.copyWith(
+                                    height: 1.25,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                            ),
+                            const SizedBox(height: 18),
+                            Row(
+                              children: [
+                                IconButton.filledTonal(
+                                  key: const Key('background-map-back'),
+                                  tooltip: '여정 지도로',
+                                  onPressed: widget.onBackToOverview,
+                                  icon: const Icon(Icons.map_outlined),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: FilledButton.icon(
+                                    key: const Key('continue-scene-intro'),
+                                    onPressed: _startSceneStory,
+                                    icon: const Icon(Icons.arrow_forward),
+                                    label: const Text('다음으로'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -1639,7 +1677,7 @@ class _SceneStoryStep extends StatelessWidget {
   Widget build(BuildContext context) {
     return _StepPanel(
       eyebrow: 'ODYSSEY SCENE',
-      title: scene.title,
+      title: null,
       children: [
         Text(
           scene.hook,
@@ -2582,7 +2620,7 @@ class _StepPanel extends StatelessWidget {
   });
 
   final String eyebrow;
-  final String title;
+  final String? title;
   final List<Widget> children;
 
   @override
@@ -2614,13 +2652,16 @@ class _StepPanel extends StatelessWidget {
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.headlineMedium
-                ?.copyWith(height: 1.25, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 24),
+          if (title != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              title!,
+              style: Theme.of(context).textTheme.headlineMedium
+                  ?.copyWith(height: 1.25, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 24),
+          ] else
+            const SizedBox(height: 16),
           ...children,
         ],
       ),
@@ -2734,6 +2775,13 @@ class _Brand extends StatelessWidget {
       spacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        Image.asset(
+          'assets/images/godflix_logo_g_v1.png',
+          key: const Key('godflix-logo'),
+          width: compact ? 24 : 28,
+          height: compact ? 24 : 28,
+          filterQuality: FilterQuality.high,
+        ),
         if (!compact)
           Text(
             '동중한합회 청년연합예배',
