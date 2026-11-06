@@ -461,6 +461,15 @@ void main() {
     await _pumpTransition(tester);
     await _tapVisible(tester, find.byKey(const Key('map-scene-0')));
     await _pumpTransition(tester);
+    final introTitle = find.byKey(const Key('scene-intro-title')).hitTestable();
+    final introNext = find
+        .byKey(const Key('continue-scene-intro'))
+        .hitTestable();
+    expect(find.text('에피소드 1'), findsOneWidget);
+    expect(tester.getTopLeft(introTitle).dx, lessThan(80));
+    expect(tester.getTopLeft(introTitle).dy, lessThan(200));
+    expect(tester.getBottomRight(introNext).dx, greaterThan(300));
+    expect(tester.getBottomRight(introNext).dy, greaterThan(700));
     await _revealScene(tester);
     await _tapVisible(tester, find.byKey(const Key('open-choices')));
     await _pumpTransition(tester);
@@ -490,10 +499,15 @@ void main() {
 
     await _tapVisible(tester, find.byKey(const Key('map-scene-0')));
     await _pumpTransition(tester);
-    expect(
-      find.byKey(const Key('scene-intro-title')).hitTestable(),
-      findsOneWidget,
-    );
+    final introTitle = find.byKey(const Key('scene-intro-title')).hitTestable();
+    final introNext = find
+        .byKey(const Key('continue-scene-intro'))
+        .hitTestable();
+    expect(introTitle, findsOneWidget);
+    expect(tester.getTopLeft(introTitle).dx, lessThan(80));
+    expect(tester.getTopLeft(introTitle).dy, lessThan(200));
+    expect(tester.getBottomRight(introNext).dx, greaterThan(900));
+    expect(tester.getBottomRight(introNext).dy, greaterThan(650));
     await _revealScene(tester);
     await _tapVisible(tester, find.byKey(const Key('open-choices')));
     await _pumpTransition(tester);

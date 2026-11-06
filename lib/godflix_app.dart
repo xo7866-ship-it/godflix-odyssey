@@ -1260,76 +1260,83 @@ class _JourneyScreenState extends State<JourneyScreen> {
               duration: const Duration(milliseconds: 350),
               curve: Curves.easeInOut,
               child: SafeArea(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 760),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: const Color(0xC9141720),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.18),
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x88000000),
-                              blurRadius: 32,
-                              offset: Offset(0, 14),
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 620),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 18,
                             ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'EPISODE ${(_sceneIndex + 1).toString().padLeft(2, '0')}',
-                              style: const TextStyle(
-                                color: _gold,
-                                fontSize: 12,
-                                letterSpacing: 1.8,
-                                fontWeight: FontWeight.w900,
+                            decoration: BoxDecoration(
+                              color: const Color(0xA6141720),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.18),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _scene.title,
-                              key: const Key('scene-intro-title'),
-                              style: Theme.of(context).textTheme.headlineMedium
-                                  ?.copyWith(
-                                    height: 1.25,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                            ),
-                            const SizedBox(height: 18),
-                            Row(
-                              children: [
-                                IconButton.filledTonal(
-                                  key: const Key('background-map-back'),
-                                  tooltip: '여정 지도로',
-                                  onPressed: widget.onBackToOverview,
-                                  icon: const Icon(Icons.map_outlined),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: FilledButton.icon(
-                                    key: const Key('continue-scene-intro'),
-                                    onPressed: _startSceneStory,
-                                    icon: const Icon(Icons.arrow_forward),
-                                    label: const Text('다음으로'),
-                                  ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x77000000),
+                                  blurRadius: 28,
+                                  offset: Offset(0, 12),
                                 ),
                               ],
                             ),
-                          ],
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '에피소드 ${_sceneIndex + 1}',
+                                  style: const TextStyle(
+                                    color: _gold,
+                                    fontSize: 12,
+                                    letterSpacing: 1.2,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _scene.title,
+                                  key: const Key('scene-intro-title'),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        height: 1.25,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: IconButton.filledTonal(
+                          key: const Key('background-map-back'),
+                          tooltip: '여정 지도로',
+                          onPressed: widget.onBackToOverview,
+                          icon: const Icon(Icons.map_outlined),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: FilledButton.icon(
+                          key: const Key('continue-scene-intro'),
+                          onPressed: _startSceneStory,
+                          icon: const Icon(Icons.arrow_forward),
+                          label: const Text('다음으로'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
