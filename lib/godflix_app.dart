@@ -1444,8 +1444,30 @@ class _JourneyHeader extends StatelessWidget {
                       onPressed: onBack,
                       icon: const Icon(Icons.arrow_back),
                     ),
-                  const _Brand(compact: true),
-                  const Spacer(),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const _Brand(compact: true),
+                        if (step != JourneyStep.summary) ...[
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              journeyScenes[sceneIndex].title,
+                              key: const Key('current-episode-title'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.78),
+                                fontSize: compact ? 12 : 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   if (!compact)
                     Text(
                       status,
@@ -1937,11 +1959,19 @@ class _ScriptureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      key: const Key('scripture-card'),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1E3BC),
+        color: _gold,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _gold.withValues(alpha: 0.8)),
+        border: Border.all(color: const Color(0xFFFFDD72), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: _gold.withValues(alpha: 0.2),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1949,7 +1979,7 @@ class _ScriptureCard extends StatelessWidget {
           Text(
             scene.scriptureReference,
             style: const TextStyle(
-              color: Color(0xFF7A321C),
+              color: Color(0xFF69230F),
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -1957,7 +1987,7 @@ class _ScriptureCard extends StatelessWidget {
           Text(
             scene.scriptureText,
             style: const TextStyle(
-              color: Color(0xFF352313),
+              color: Color(0xFF211807),
               fontSize: 17,
               height: 1.65,
               fontWeight: FontWeight.w600,

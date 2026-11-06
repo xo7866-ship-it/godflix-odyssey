@@ -252,8 +252,15 @@ void main() {
     expect(find.byKey(const Key('continue-scene-intro')), findsOneWidget);
     await _revealScene(tester);
 
-    expect(find.text('왕이 없는 섬, 이타카').hitTestable(), findsNothing);
+    expect(
+      find.byKey(const Key('scene-intro-title')).hitTestable(),
+      findsNothing,
+    );
     expect(find.byKey(const Key('scene-story')), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('current-episode-title'))).data,
+      '왕이 없는 섬, 이타카',
+    );
     expect(find.byKey(const Key('scene-discussion')), findsNothing);
     expect(find.byKey(const Key('open-choices')), findsOneWidget);
     expect(find.text('어떻게 할까요?'), findsNothing);
@@ -272,6 +279,13 @@ void main() {
     await _pumpTransition(tester);
 
     expect(find.text('사사기 17장 6절'), findsOneWidget);
+    final scriptureCard = tester.widget<Container>(
+      find.byKey(const Key('scripture-card')),
+    );
+    expect(
+      (scriptureCard.decoration! as BoxDecoration).color,
+      const Color(0xFFF5C542),
+    );
     expect(find.byKey(const Key('devotional-heading')), findsOneWidget);
     expect(find.text('시대의 소망 323-324p'), findsOneWidget);
     expect(find.byKey(const Key('devotional-text')), findsOneWidget);
