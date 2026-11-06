@@ -45,9 +45,36 @@ void main() {
       '최악과 차악 사이에서',
       '마음을 무너뜨리는 ‘조롱’',
       '가장 두려운 결과 ‘몰살’',
-      '망각의 ‘저주’ or 무감각의 ‘무덤’',
+      '무감각의 ‘무덤’',
       '숨어든 ‘진짜’',
     ]);
+  });
+
+  test('scene questions match the updated source document', () {
+    expect(journeyScenes.map((scene) => scene.question), [
+      '내 삶에 하나님이 계시지 않아 생긴 어려움과 혼란이 있나요?',
+      '나를 넘어뜨리는 단 한 가지 유혹이 있나요?',
+      '작은 타협이 걷잡을 수 없이 커다란 죄에 빠지는 시발점이 되었던 적이 있나요?',
+      '나에게 가장 교묘히 다가오는 죄의 유혹은 무엇인가요?',
+      '하나님을 떠나 방법을 찾으려고 고군분투했던 적이 있나요?',
+      '차라리 모르는 게 나았다고 생각하는 죄가 있나요?',
+      '막다른 길에 다다른 경험이 있나요?',
+      '끝이 보이지 않는 긴 터널 가운데 서 있다고 느껴본 적이 있나요?',
+      '신앙의 여정에서 내가 가장 혹심하게 흔들렸던 적이 있나요?',
+      '신앙에서 길을 잃어버렸던 적이 있나요?',
+      '아무리 사단의 목소리가 커도, 조용하지만 분명히 역사하시는 하나님을 경험해 본 적이 있나요?',
+    ]);
+  });
+
+  test('updated source stories and Calypso scripture are connected', () {
+    expect(journeyScenes[1].story, contains('10년을 버틴 성은 하룻밤만에'));
+    expect(journeyScenes[5].story, contains('내가 어긴 약속들의 노래'));
+    expect(journeyScenes[9].hook, '무감각의 ‘무덤’');
+    expect(journeyScenes[9].story, startsWith('늙은 남자는'));
+    expect(journeyScenes[9].story, contains('파편을 모읍니다'));
+    expect(journeyScenes[9].scriptureReference, '이사야 17장 9절');
+    expect(journeyScenes[9].scriptureText, contains('네 구원의 하나님을 잊어버리며'));
+    expect(journeyScenes[10].story, startsWith('“--”'));
   });
 
   test('provided scene artwork is connected to scenes two through eight', () {
@@ -116,15 +143,29 @@ void main() {
     expect(content, contains('요한의 침례'));
   });
 
-  test('HWP devotional passages are connected to their scenes', () {
+  test('devotional passages are connected to their scenes', () {
     final devotionalScenes = journeyScenes
         .where((scene) => scene.devotionalText.isNotEmpty)
         .toList();
+    final ithaca = journeyScenes.firstWhere((scene) => scene.id == 'ithaca');
     final troy = journeyScenes.firstWhere((scene) => scene.id == 'troy');
 
-    expect(devotionalScenes, hasLength(6));
+    expect(devotionalScenes, hasLength(7));
+    expect(ithaca.devotionalReference, '시대의 소망 323-324p');
+    expect(ithaca.devotionalText, contains('악에 대한 유일의 방어'));
     expect(troy.devotionalReference, '부조와 선지자 71장');
     expect(troy.devotionalText, contains('비밀리에 원칙의 요새를 침식'));
+  });
+
+  test('Ithaca story uses the approved three paragraphs', () {
+    final ithaca = journeyScenes.firstWhere((scene) => scene.id == 'ithaca');
+
+    expect(
+      ithaca.story,
+      '“날 선택하고 이 기다림을 끝내요”\n\n'
+      '왕이 없는 왕성은 이미 침범당했습니다.\n\n'
+      '물리칠 능력이 없는 어머니와 아들은 더 이상 지킬 수 있는 명예도, 체면도 없습니다.',
+    );
   });
 
   testWidgets('first scene reaches scripture and the next scene', (
@@ -206,7 +247,8 @@ void main() {
 
     expect(find.text('사사기 17장 6절'), findsOneWidget);
     expect(find.byKey(const Key('devotional-heading')), findsOneWidget);
-    expect(find.byKey(const Key('devotional-missing')), findsOneWidget);
+    expect(find.text('시대의 소망 323-324p'), findsOneWidget);
+    expect(find.byKey(const Key('devotional-text')), findsOneWidget);
     expect(
       tester
           .widget<FilledButton>(
@@ -224,6 +266,8 @@ void main() {
       find.byKey(const Key('reflection-field')),
       '결정 전에 기도하기',
     );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
     await _tapVisible(tester, find.byKey(const Key('complete-scene')));
     await _pumpTransition(tester);
 
