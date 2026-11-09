@@ -116,6 +116,8 @@ class _GodflixAppState extends State<GodflixApp> {
     }
   }
 
+  void _preloadAudio(String asset) => _ambientAudio.preload(asset);
+
   void _resetJourney() {
     _progressStore.clear();
     _ambientAudio.pause();
@@ -230,6 +232,7 @@ class _GodflixAppState extends State<GodflixApp> {
               isFullscreen: _fullscreenController.isFullscreen,
               onProgress: _recordProgress,
               onAudioChanged: _changeAudio,
+              onAudioPreload: _preloadAudio,
               onToggleSound: _toggleSound,
               onToggleFullscreen: _toggleFullscreen,
               onBackToOverview: _backToOverview,
@@ -942,6 +945,7 @@ class JourneyScreen extends StatefulWidget {
     required this.isFullscreen,
     required this.onProgress,
     required this.onAudioChanged,
+    required this.onAudioPreload,
     required this.onToggleSound,
     required this.onToggleFullscreen,
     required this.onBackToOverview,
@@ -954,6 +958,7 @@ class JourneyScreen extends StatefulWidget {
   final bool isFullscreen;
   final ValueChanged<String> onProgress;
   final void Function(String asset, bool subdued) onAudioChanged;
+  final ValueChanged<String> onAudioPreload;
   final VoidCallback onToggleSound;
   final void Function(BuildContext) onToggleFullscreen;
   final VoidCallback onBackToOverview;
@@ -968,6 +973,7 @@ class _JourneyScreenState extends State<JourneyScreen> {
   late JourneyStep _step;
   final _reflectionController = TextEditingController();
   final _answers = <JourneyAnswer>[];
+  final _preloadedSceneIndices = <int>{};
 
   JourneyScene get _scene => journeyScenes[_sceneIndex];
 
@@ -1035,6 +1041,24 @@ class _JourneyScreenState extends State<JourneyScreen> {
       haze: const Color(0xFFFFE6A8),
       water: true,
     ),
+    'storm' => (
+      alignment: Alignment.center,
+      pan: const Offset(-18, 2),
+      zoom: 0.045,
+      rotation: 0.004,
+      duration: const Duration(seconds: 13),
+      haze: const Color(0xFF9EC8E6),
+      water: true,
+    ),
+    'calypso' => (
+      alignment: const Alignment(0.32, 0),
+      pan: const Offset(-16, 3),
+      zoom: 0.035,
+      rotation: 0.0015,
+      duration: const Duration(seconds: 21),
+      haze: const Color(0xFFFFD39A),
+      water: true,
+    ),
     _ => (
       alignment: const Alignment(0.35, 0),
       pan: const Offset(18, 5),
@@ -1051,6 +1075,31 @@ class _JourneyScreenState extends State<JourneyScreen> {
     super.initState();
     _sceneIndex = widget.initialSceneIndex;
     _step = JourneyStep.background;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _preloadNextScene();
+  }
+
+  void _preloadNextScene() {
+    final nextIndex = _sceneIndex + 1;
+    if (nextIndex >= journeyScenes.length ||
+        !_preloadedSceneIndices.add(nextIndex)) {
+      return;
+    }
+    final nextScene = journeyScenes[nextIndex];
+    final imageAssets = nextScene.id == 'return'
+        ? const [
+            'assets/images/scene_11_ithaca_plate.png',
+            'assets/images/scene_11_ithaca_ship.png',
+          ]
+        : [nextScene.imageAsset];
+    for (final asset in imageAssets) {
+      unawaited(precacheImage(AssetImage(asset), context));
+    }
+    widget.onAudioPreload(nextScene.audioAsset);
   }
 
   @override
@@ -1121,6 +1170,7 @@ class _JourneyScreenState extends State<JourneyScreen> {
       _step = JourneyStep.background;
     });
     widget.onAudioChanged(_scene.audioAsset, false);
+    _preloadNextScene();
   }
 
   @override

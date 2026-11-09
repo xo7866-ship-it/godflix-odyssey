@@ -8,6 +8,8 @@ class AmbientAudio {
   static const defaultAsset = 'assets/audio/sea_wind.wav';
 
   html.AudioElement? _audio;
+  html.AudioElement? _preloadedAudio;
+  String? _preloadedAsset;
   Timer? _fadeTimer;
   bool _playing = false;
   String _asset = defaultAsset;
@@ -17,6 +19,18 @@ class AmbientAudio {
   bool get isPlaying => _playing;
   String get asset => _asset;
   double get volume => _volume;
+
+  void preload(String asset) {
+    if (asset == _asset || asset == _preloadedAsset) return;
+    _preloadedAudio?.pause();
+    _preloadedAudio?.remove();
+    _preloadedAsset = asset;
+    _preloadedAudio = html.AudioElement('assets/$asset')
+      ..preload = 'auto'
+      ..style.display = 'none';
+    html.document.body?.append(_preloadedAudio!);
+    _preloadedAudio!.load();
+  }
 
   Future<void> play({String? asset, double? volume}) async {
     final nextAsset = asset ?? _asset;
@@ -30,8 +44,13 @@ class AmbientAudio {
       _audio?.pause();
       _audio?.remove();
       html.document.getElementById('godflix-ambient-audio')?.remove();
+      final preloaded = _preloadedAsset == nextAsset ? _preloadedAudio : null;
+      if (preloaded != null) {
+        _preloadedAsset = null;
+        _preloadedAudio = null;
+      }
       _asset = nextAsset;
-      _audio = html.AudioElement('assets/$nextAsset')
+      _audio = (preloaded ?? html.AudioElement('assets/$nextAsset'))
         ..id = 'godflix-ambient-audio'
         ..loop = true
         ..preload = 'auto'
@@ -103,6 +122,10 @@ class AmbientAudio {
   void dispose() {
     pause();
     _audio?.remove();
+    _preloadedAudio?.pause();
+    _preloadedAudio?.remove();
+    _preloadedAudio = null;
+    _preloadedAsset = null;
     _audio = null;
   }
 }

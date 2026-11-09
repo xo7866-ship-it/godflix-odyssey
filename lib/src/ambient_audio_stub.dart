@@ -9,6 +9,8 @@ class AmbientAudio {
   String get asset => _asset;
   double get volume => _volume;
 
+  void preload(String asset) {}
+
   Future<void> play({String? asset, double? volume}) async {
     if (asset != null) _asset = asset;
     if (volume != null) setVolume(volume);

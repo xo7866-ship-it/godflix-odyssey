@@ -1,9 +1,5 @@
 import '../models/scene.dart';
 
-// Licensed scene stills can replace these placeholders without changing the
-// story flow or scene data.
-const _placeholderImage = 'assets/images/scene_3.jpg';
-
 const journeyScenes = <JourneyScene>[
   JourneyScene(
     id: 'ithaca',
@@ -277,7 +273,7 @@ const journeyScenes = <JourneyScene>[
     story: '커다란 배가 너무도 간단히 두 동강 납니다.\n\n닿지 않을 것을 알면서도 그는 그들을 향해 손을 뻗습니다.\n\n번쩍이는 번개 사이로 잠깐,\n\n서로는 다가오는 운명을 직감하며 마지막 시선을 나눕니다.\n\n그 다음 번개가 번쩍였을 때\n\n이제 거기에는 아무것도 없습니다.',
     question: '신앙의 여정에서 내가 가장 혹심하게 흔들렸던 적이 있나요?',
     discussion: '하나님을 믿고 의지했음에도 이해할 수 없는 일이 일어날 때가 있습니다. 간절히 기도했지만 바라던 결과를 얻지 못하고, 소중히 여겼던 것을 잃어버리기도 합니다. 그런 순간에는 지금까지 믿어 왔던 것마저 낯설게 느껴지고, 하나님을 향한 마음에 깊은 침묵이 찾아오기도 합니다.',
-    imageAsset: _placeholderImage,
+    imageAsset: 'assets/images/scene_9_storm.png',
     audioAsset: 'assets/audio/scene_9_storm.m4a',
     scriptureReference: '마태복음 24장 24절',
     scriptureText:
@@ -309,7 +305,7 @@ const journeyScenes = <JourneyScene>[
     story: '늙은 남자는 자기가 기억하지 못하는 어떤 파편을 모읍니다.\n\n그의 기억은 승리에 머물러 있지만,\n\n그의 몸은 패배로 뒤틀려 있습니다.\n\n아주 오랜 꿈에서 깨어나, 그는 로투스 꽃잎을 내려놓고 비로소 묻습니다.\n\n“나 여기 얼마나 있었어?”',
     question: '신앙에서 길을 잃어버렸던 적이 있나요?',
     discussion: '처음부터 하나님을 떠나려고 했던 것은 아닙니다. 그저 하루하루 바쁘게 살아가다 보니 기도하는 시간이 줄어들고, 어느새 예배도 익숙한 습관이 되어버립니다. 그렇게 시간이 흐른 어느 날, 하나님과 가까웠던 시절의 자신이 문득 낯설고 그립게 느껴지기도 합니다.',
-    imageAsset: _placeholderImage,
+    imageAsset: 'assets/images/scene_10_calypso.png',
     audioAsset: 'assets/audio/scene_10_calypso.m4a',
     scriptureReference: '이사야 17장 9절',
     scriptureText: '그 날에 그 견고한 성읍들이 옛적에 이스라엘 자손 앞에서 버린 바 된 수풀 속의 처소와 작은 산 꼭대기의 처소 같아서 황폐하리니 이는 네가 네 구원의 하나님을 잊어버리며 네 능력의 반석을 마음에 두지 아니한 까닭이라.',

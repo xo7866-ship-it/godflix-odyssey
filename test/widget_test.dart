@@ -93,8 +93,8 @@ void main() {
     expect(journeyScenes[10].story, startsWith('“--”'));
   });
 
-  test('provided scene artwork is connected to scenes two through eight', () {
-    expect(journeyScenes.skip(1).take(7).map((scene) => scene.imageAsset), [
+  test('provided scene artwork is connected to scenes two through ten', () {
+    expect(journeyScenes.skip(1).take(9).map((scene) => scene.imageAsset), [
       'assets/images/scene_2_troy.jpg',
       'assets/images/scene_3_cyclops.jpg',
       'assets/images/scene_4_circe.jpg',
@@ -102,6 +102,8 @@ void main() {
       'assets/images/scene_6_sirens.jpg',
       'assets/images/scene_7_scylla.jpg',
       'assets/images/scene_8_helios.jpg',
+      'assets/images/scene_9_storm.png',
+      'assets/images/scene_10_calypso.png',
     ]);
   });
 
