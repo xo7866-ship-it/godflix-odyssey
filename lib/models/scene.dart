@@ -19,6 +19,7 @@ class JourneyScene {
     required this.question,
     required this.discussion,
     required this.imageAsset,
+    required this.mobileImageAsset,
     this.audioAsset = 'assets/audio/sea_wind.wav',
     required this.scriptureReference,
     required this.scriptureText,
@@ -36,6 +37,7 @@ class JourneyScene {
   final String question;
   final String discussion;
   final String imageAsset;
+  final String mobileImageAsset;
   final String audioAsset;
   final String scriptureReference;
   final String scriptureText;

@@ -973,7 +973,8 @@ class _JourneyScreenState extends State<JourneyScreen> {
   late JourneyStep _step;
   final _reflectionController = TextEditingController();
   final _answers = <JourneyAnswer>[];
-  final _preloadedSceneIndices = <int>{};
+  final _preloadedImageAssets = <String>{};
+  final _preloadedAudioAssets = <String>{};
 
   JourneyScene get _scene => journeyScenes[_sceneIndex];
 
@@ -1085,21 +1086,30 @@ class _JourneyScreenState extends State<JourneyScreen> {
 
   void _preloadNextScene() {
     final nextIndex = _sceneIndex + 1;
-    if (nextIndex >= journeyScenes.length ||
-        !_preloadedSceneIndices.add(nextIndex)) {
+    if (nextIndex >= journeyScenes.length) {
       return;
     }
     final nextScene = journeyScenes[nextIndex];
-    final imageAssets = nextScene.id == 'return'
-        ? const [
-            'assets/images/scene_11_ithaca_plate.png',
-            'assets/images/scene_11_ithaca_ship.png',
-          ]
-        : [nextScene.imageAsset];
-    for (final asset in imageAssets) {
-      unawaited(precacheImage(AssetImage(asset), context));
+    final compact = MediaQuery.sizeOf(context).width < _compactLayoutBreakpoint;
+    final List<String> imageAssets;
+    if (compact) {
+      imageAssets = [nextScene.mobileImageAsset];
+    } else if (nextScene.id == 'return') {
+      imageAssets = const [
+        'assets/images/scene_11_ithaca_plate.png',
+        'assets/images/scene_11_ithaca_ship.png',
+      ];
+    } else {
+      imageAssets = [nextScene.imageAsset];
     }
-    widget.onAudioPreload(nextScene.audioAsset);
+    for (final asset in imageAssets) {
+      if (_preloadedImageAssets.add(asset)) {
+        unawaited(precacheImage(AssetImage(asset), context));
+      }
+    }
+    if (_preloadedAudioAssets.add(nextScene.audioAsset)) {
+      widget.onAudioPreload(nextScene.audioAsset);
+    }
   }
 
   @override
@@ -1175,18 +1185,22 @@ class _JourneyScreenState extends State<JourneyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < _compactLayoutBreakpoint;
     final showScene = _step != JourneyStep.summary;
     final backgroundOnly = _step == JourneyStep.background;
     final brightenScene =
         _step == JourneyStep.story || _step == JourneyStep.discussion;
     final sceneVisual = _sceneVisual(showScene ? _scene.id : 'summary');
+    final sceneImageAsset = compact
+        ? _scene.mobileImageAsset
+        : _scene.imageAsset;
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 700),
-            child: showScene && _scene.id == 'return'
+            child: showScene && _scene.id == 'return' && !compact
                 ? _LayeredSailingBackground(
                     key: const ValueKey('return-cinematic-background'),
                     plateAsset: 'assets/images/scene_11_ithaca_plate.png',
@@ -1196,15 +1210,21 @@ class _JourneyScreenState extends State<JourneyScreen> {
                     semanticsLabel: '${_scene.title} 배경',
                   )
                 : _LivingBackground(
-                    key: ValueKey(showScene ? _scene.imageAsset : 'summary'),
+                    key: ValueKey(showScene ? sceneImageAsset : 'summary'),
                     imageAsset: showScene
-                        ? _scene.imageAsset
+                        ? sceneImageAsset
                         : 'assets/images/scene_3.jpg',
                     alignment: showScene
-                        ? sceneVisual.alignment
+                        ? compact
+                              ? Alignment.center
+                              : sceneVisual.alignment
                         : const Alignment(0.25, 0),
-                    motionOffset: sceneVisual.pan,
-                    zoomAmount: sceneVisual.zoom,
+                    motionOffset: compact
+                        ? sceneVisual.pan * 0.45
+                        : sceneVisual.pan,
+                    zoomAmount: compact
+                        ? sceneVisual.zoom * 0.55
+                        : sceneVisual.zoom,
                     rotationAmount: sceneVisual.rotation,
                     motionDuration: sceneVisual.duration,
                     hazeColor: sceneVisual.haze,

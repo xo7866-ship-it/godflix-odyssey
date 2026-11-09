@@ -107,6 +107,22 @@ void main() {
     ]);
   });
 
+  test('all scenes have dedicated mobile artwork', () {
+    expect(journeyScenes.map((scene) => scene.mobileImageAsset), [
+      'assets/images/scene_1_mobile.png',
+      'assets/images/scene_2_troy_mobile.png',
+      'assets/images/scene_3_cyclops_mobile.png',
+      'assets/images/scene_4_circe_mobile.png',
+      'assets/images/scene_5_underworld_mobile.png',
+      'assets/images/scene_6_sirens_mobile.png',
+      'assets/images/scene_7_scylla_mobile.png',
+      'assets/images/scene_8_helios_mobile.png',
+      'assets/images/scene_9_storm_mobile.png',
+      'assets/images/scene_10_calypso_mobile.png',
+      'assets/images/scene_11_ithaca_return_mobile.png',
+    ]);
+  });
+
   test('episode audio is connected and the return uses sea ambience', () {
     expect(journeyScenes.map((scene) => scene.audioAsset), [
       'assets/audio/scene_1_ithaca.m4a',
@@ -454,9 +470,15 @@ void main() {
 
     await _tapVisible(tester, find.byKey(const Key('map-scene-10')));
     await _pumpTransition(tester);
+    expect(find.byKey(const Key('return-cinematic-background')), findsNothing);
+    final mobileAssets = tester
+        .widgetList<Image>(find.byType(Image))
+        .where((image) => image.image is AssetImage)
+        .map((image) => (image.image as AssetImage).assetName)
+        .toSet();
     expect(
-      find.byKey(const Key('return-cinematic-background')),
-      findsOneWidget,
+      mobileAssets,
+      contains('assets/images/scene_11_ithaca_return_mobile.png'),
     );
     await tester.tap(find.byKey(const Key('continue-scene-intro')));
     await _pumpTransition(tester);
