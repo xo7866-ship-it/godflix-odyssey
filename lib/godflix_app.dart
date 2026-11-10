@@ -978,6 +978,37 @@ class _JourneyScreenState extends State<JourneyScreen> {
 
   JourneyScene get _scene => journeyScenes[_sceneIndex];
 
+  Alignment _sceneIntroAlignment(String id, {required bool compact}) {
+    if (compact) {
+      return switch (id) {
+        'troy' => const Alignment(-0.72, 0.28),
+        'cyclops' => const Alignment(0, 0.12),
+        'circe' => const Alignment(0.68, 0.48),
+        'underworld' => const Alignment(0.7, -0.34),
+        'sirens' => const Alignment(-0.68, 0.5),
+        'scylla' => const Alignment(-0.58, -0.08),
+        'helios' => const Alignment(0.62, 0.1),
+        'storm' => const Alignment(-0.7, -0.28),
+        'calypso' => const Alignment(-0.72, -0.46),
+        'return' => const Alignment(-0.68, -0.54),
+        _ => const Alignment(-0.68, -0.72),
+      };
+    }
+    return switch (id) {
+      'troy' => const Alignment(-0.65, 0.34),
+      'cyclops' => const Alignment(0, -0.72),
+      'circe' => const Alignment(-0.72, -0.62),
+      'underworld' => const Alignment(0.72, -0.58),
+      'sirens' => const Alignment(-0.72, -0.6),
+      'scylla' => const Alignment(-0.68, -0.54),
+      'helios' => const Alignment(0, -0.72),
+      'storm' => const Alignment(-0.58, -0.52),
+      'calypso' => const Alignment(-0.72, -0.54),
+      'return' => const Alignment(-0.72, -0.62),
+      _ => const Alignment(-1, -0.72),
+    };
+  }
+
   _SceneVisual _sceneVisual(String id) => switch (id) {
     'troy' => (
       alignment: const Alignment(-0.36, 0),
@@ -1336,10 +1367,17 @@ class _JourneyScreenState extends State<JourneyScreen> {
                     fit: StackFit.expand,
                     children: [
                       Align(
-                        alignment: Alignment.topLeft,
+                        key: Key('scene-intro-placement-${_scene.id}'),
+                        alignment: _sceneIntroAlignment(
+                          _scene.id,
+                          compact: compact,
+                        ),
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 620),
+                          constraints: BoxConstraints(
+                            maxWidth: compact ? 330 : 620,
+                          ),
                           child: Container(
+                            key: const Key('scene-intro-card'),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 20,
                               vertical: 18,

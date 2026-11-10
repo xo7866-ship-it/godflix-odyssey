@@ -520,6 +520,65 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('compact episode intro titles use scene-specific safe areas', (
+    tester,
+  ) async {
+    _setViewport(tester, const Size(390, 844));
+
+    const expectedAlignments = <Alignment>[
+      Alignment(-0.68, -0.72),
+      Alignment(-0.72, 0.28),
+      Alignment(0, 0.12),
+      Alignment(0.68, 0.48),
+      Alignment(0.7, -0.34),
+      Alignment(-0.68, 0.5),
+      Alignment(-0.58, -0.08),
+      Alignment(0.62, 0.1),
+      Alignment(-0.7, -0.28),
+      Alignment(-0.72, -0.46),
+      Alignment(-0.68, -0.54),
+    ];
+
+    for (var index = 0; index < journeyScenes.length; index++) {
+      final scene = journeyScenes[index];
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData.dark(),
+          home: JourneyScreen(
+            key: ValueKey(scene.id),
+            initialSceneIndex: index,
+            completedSceneIds: const <String>{},
+            soundOn: false,
+            isFullscreen: false,
+            onProgress: (_) {},
+            onAudioChanged: (_, _) {},
+            onAudioPreload: (_) {},
+            onToggleSound: () {},
+            onToggleFullscreen: (_) {},
+            onBackToOverview: () {},
+            onReset: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final placement = find.byKey(Key('scene-intro-placement-${scene.id}'));
+      expect(
+        tester.widget<Align>(placement).alignment,
+        expectedAlignments[index],
+      );
+      expect(
+        tester
+            .getRect(find.byKey(const Key('scene-intro-card')))
+            .overlaps(
+              tester.getRect(find.byKey(const Key('continue-scene-intro'))),
+            ),
+        isFalse,
+      );
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('wide iPad keeps the map and top-aligned step transitions', (
     tester,
   ) async {
