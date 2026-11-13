@@ -2090,10 +2090,7 @@ class _DevotionalCard extends StatelessWidget {
       spans.add(
         TextSpan(
           text: range.text,
-          style: const TextStyle(
-            color: Colors.white,
-            backgroundColor: Color(0x52F5C542),
-          ),
+          style: const TextStyle(color: _gold),
         ),
       );
       cursor = range.start + range.text.length;
