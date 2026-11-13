@@ -346,13 +346,11 @@ void main() {
     );
     final highlightedSpans = devotionalText.textSpan!.children!
         .whereType<TextSpan>()
-        .where((span) => span.style?.backgroundColor == const Color(0xFFFFE8A3))
+        .where((span) => span.style?.backgroundColor == const Color(0x52F5C542))
         .toList();
     expect(highlightedSpans, hasLength(2));
     expect(
-      highlightedSpans.every(
-        (span) => span.style?.color == const Color(0xFF211807),
-      ),
+      highlightedSpans.every((span) => span.style?.color == Colors.white),
       isTrue,
     );
     expect(find.text('묵상 질문으로 이동'), findsOneWidget);

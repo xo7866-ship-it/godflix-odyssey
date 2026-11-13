@@ -2091,9 +2091,8 @@ class _DevotionalCard extends StatelessWidget {
         TextSpan(
           text: range.text,
           style: const TextStyle(
-            color: Color(0xFF211807),
-            backgroundColor: Color(0xFFFFE8A3),
-            fontWeight: FontWeight.w800,
+            color: Colors.white,
+            backgroundColor: Color(0x52F5C542),
           ),
         ),
       );
