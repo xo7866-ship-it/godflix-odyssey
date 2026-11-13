@@ -68,14 +68,14 @@ void main() {
 
   test('discussion copy matches the approved wording exactly', () {
     expect(journeyScenes.map((scene) => scene.discussion), [
-      '우리는 하나님을 믿으면서도 때로는 그분을 잊은 채 살아갑니다. 중요한 결정을 혼자 내리고, 모든 책임을 스스로 감당하려 애쓰기도 합니다. 그렇게 분주하게 살아가다 문득, 무엇을 위해 이토록 애쓰고 있는지 알 수 없어지는 순간이 찾아오기도 합니다.',
-      '누구에게나 유독 약해지는 순간이 있습니다. 다른 일에는 흔들리지 않다가도 어떤 상황이나 감정 앞에서는 쉽게 무너지곤 합니다. 몇 번이고 다짐했지만 같은 실수를 반복하는 자신의 모습에 실망하기도 합니다.',
-      '처음에는 그저 사소한 선택이었습니다. 이 정도는 괜찮을 거라 생각했고, 언제든 마음만 먹으면 돌아갈 수 있다고 믿었습니다. 그러나 시간이 흐른 뒤 돌아보면, 어느새 처음에는 생각지도 못했던 곳에 서 있는 자신을 발견하기도 합니다.',
-      '잘못된 선택이라는 것을 알면서도 마음이 끌리는 순간이 있습니다. 때로는 그 선택을 정당화할 이유들이 너무도 그럴듯하게 느껴집니다. 결국 우리는 누군가에게 속기보다 스스로 만들어 낸 변명에 설득되어 버리기도 합니다.',
-      '문제가 생기면 당장 무언가를 해야만 할 것 같은 조급함이 찾아옵니다. 사람을 찾아가고, 정보를 모으고, 할 수 있는 모든 방법을 동원하지만 마음은 좀처럼 편안해지지 않습니다. 모든 힘을 쏟아낸 뒤에야 혼자서는 해결할 수 없는 일도 있다는 사실을 깨닫곤 합니다.',
+      '내 삶에 가장 큰 자리를 차지하고 있는 것은 무엇인가요?\n\n그것이 내 삶에 어떤 어려움과 혼란을 야기하고 있나요?\n\n하나님께서는 이에 대해 뭐라고 말씀하실까요? 말씀을 함께 읽어봅시다.',
+      '나를 하나님에게서 멀어지게 하는 작은 계기가 있나요?\n\n내가 그 계기를 자꾸 허용하고 마는 이유는 무엇인가요?\n\n하나님께서는 이에 대해 뭐라고 말씀하실까요? 말씀을 함께 읽어봅시다.',
+      '하나님의 말씀과 세상 사이에서 나는 보통 어떤 타협을 하나요?\n\n그 타협이 연쇄 반응으로 어떤 일들이 벌어지나요?\n\n하나님께서는 이에 대해 뭐라고 말씀하실까요? 말씀을 함께 읽어봅시다.',
+      '나에게 나쁜 영향이 될 줄 모르고 시작했는데, ‘아차’ 했던 것이 있나요?\n\n나는 어떻게 그 악영향에서 벗어날 수 있었나요? (혹은, 아직 벗어나지 못한 이유는 무엇인가요?)\n\n하나님께서는 이에 대해 뭐라고 말씀하실까요? 말씀을 함께 읽어봅시다.',
+      '세상에서 방법을 찾으려고 노력했던 것이 있나요?\n\n어떤 노력을 했고, 그 과정과 결과가 어땠나요?\n\n하나님께서는 이에 대해 뭐라고 말씀하실까요? 말씀을 함께 읽어봅시다.',
       '처음에는 단순한 호기심이었을지도 모릅니다. 하지만 한 번 경험한 즐거움이 자꾸만 생각나고, 잊었다고 여겼던 마음이 어느 순간 다시 고개를 들기도 합니다. 어떤 경험은 지나간 뒤에도 오랫동안 마음에 남아 우리의 선택을 흔들어 놓습니다.',
-      '살다 보면 어느 쪽을 선택해도 마음이 무거운 순간이 있습니다. 모두를 지키고 싶지만 그럴 수 없고, 최선을 다했음에도 누군가에게 상처를 남기기도 합니다. 무엇이 최선이었는지 끝내 확신하지 못한 채, 그 선택의 무게를 오래도록 짊어지고 살아가기도 합니다.',
-      '아무리 노력해도 상황이 달라지지 않는 시간이 있습니다. 처음에는 희망을 품고 기다렸지만, 시간이 길어질수록 기대보다 지친 마음이 앞서기도 합니다. 하루하루를 버텨내는 것만으로도 벅차서, 내일을 생각할 힘조차 남아 있지 않은 날도 있습니다.',
+      '나쁜 선택지만 남은 최악의 갈림길에 서 본 경험이 있나요?\n\n무엇을 선택했고, 어떤 결과가 남았나요?\n\n하나님께서는 이에 대해 뭐라고 말씀하실까요? 말씀을 함께 읽어봅시다.',
+      '살면서 경험한 가장 길고 힘든 시간이 있었나요?\n\n나는 그 시간을 어떻게 견뎠나요?\n\n그 시간은 나에게 어떤 중요한 교훈을 남겼나요?\n\n- 그 시간을 하나님과 함께 견뎠다면(소를 먹지 않음) 그것이 내 삶에 어떤 영향을 미쳤나요?\n\n- 그 시간에 세상에서 해결 방법을 찾으려고(소를 먹음) 노력했던 것이 있나요? 그 과정은 나에게 어떤 결과를 남겼나요?\n\n하나님께서는 이에 대해 뭐라고 말씀하실까요? 말씀을 함께 읽어봅시다.',
       '하나님을 믿고 의지했음에도 이해할 수 없는 일이 일어날 때가 있습니다. 간절히 기도했지만 바라던 결과를 얻지 못하고, 소중히 여겼던 것을 잃어버리기도 합니다. 그런 순간에는 지금까지 믿어 왔던 것마저 낯설게 느껴지고, 하나님을 향한 마음에 깊은 침묵이 찾아오기도 합니다.',
       '처음부터 하나님을 떠나려고 했던 것은 아닙니다. 그저 하루하루 바쁘게 살아가다 보니 기도하는 시간이 줄어들고, 어느새 예배도 익숙한 습관이 되어버립니다. 그렇게 시간이 흐른 어느 날, 하나님과 가까웠던 시절의 자신이 문득 낯설고 그립게 느껴지기도 합니다.',
       '살아가는 동안에는 미처 깨닫지 못했던 은혜들이 있습니다. 힘들었던 시절 곁을 지켜준 사람, 예상하지 못한 순간에 열렸던 길, 무너지지 않고 지나온 시간들이 그렇습니다. 돌아보면 평범한 일상이라고 생각했던 순간들 속에도 하나님의 손길이 조용히 머물러 있었음을 깨닫게 됩니다.',
@@ -191,6 +191,40 @@ void main() {
     expect(troy.devotionalText, contains('비밀리에 원칙의 요새를 침식'));
   });
 
+  test('PDF highlights and meditation questions are connected', () {
+    final highlightedScenes = journeyScenes
+        .where((scene) => scene.devotionalHighlights.isNotEmpty)
+        .toList();
+
+    expect(highlightedScenes.map((scene) => scene.id), [
+      'ithaca',
+      'troy',
+      'cyclops',
+      'circe',
+      'underworld',
+      'scylla',
+      'helios',
+    ]);
+    for (final scene in highlightedScenes) {
+      for (final highlight in scene.devotionalHighlights) {
+        expect(scene.devotionalText, contains(highlight));
+      }
+    }
+
+    expect(
+      journeyScenes.first.reflectionPrompt,
+      '말씀을 읽고 하나님께서 나의 문제에 어떻게 대답해 주시는 것 같은지 이야기를 나눠보세요.',
+    );
+    expect(
+      journeyScenes[2].reflectionPrompt,
+      contains('하나님 대신 사랑하는 그것이 곧 일만 악의 뿌리가 됩니다.'),
+    );
+    expect(
+      journeyScenes[6].reflectionPrompt,
+      contains('백성들의 존경심마저 크게 잃어버리고 말았습니다.'),
+    );
+  });
+
   test('Ithaca story uses the approved three paragraphs', () {
     final ithaca = journeyScenes.firstWhere((scene) => scene.id == 'ithaca');
 
@@ -264,7 +298,7 @@ void main() {
 
     expect(find.byKey(const Key('scene-story')), findsNothing);
     expect(find.byKey(const Key('scene-discussion')), findsNothing);
-    expect(find.text('왕이 없는 섬, 이타카'), findsOneWidget);
+    expect(find.byKey(const Key('scene-intro-title')), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
     expect(find.byKey(const Key('scene-story')), findsNothing);
     expect(find.byKey(const Key('continue-scene-intro')), findsOneWidget);
@@ -307,6 +341,21 @@ void main() {
     expect(find.byKey(const Key('devotional-heading')), findsOneWidget);
     expect(find.text('시대의 소망 323-324p'), findsOneWidget);
     expect(find.byKey(const Key('devotional-text')), findsOneWidget);
+    final devotionalText = tester.widget<SelectableText>(
+      find.byKey(const Key('devotional-text')),
+    );
+    final highlightedSpans = devotionalText.textSpan!.children!
+        .whereType<TextSpan>()
+        .where((span) => span.style?.backgroundColor == const Color(0xFFFFE8A3))
+        .toList();
+    expect(highlightedSpans, hasLength(2));
+    expect(
+      highlightedSpans.every(
+        (span) => span.style?.color == const Color(0xFF211807),
+      ),
+      isTrue,
+    );
+    expect(find.text('묵상 질문으로 이동'), findsOneWidget);
     expect(
       tester
           .widget<FilledButton>(
@@ -320,6 +369,7 @@ void main() {
     );
     await _tapVisible(tester, find.byKey(const Key('open-reflection')));
     await _pumpTransition(tester);
+    expect(find.text('묵상 질문'), findsWidgets);
     await tester.enterText(
       find.byKey(const Key('reflection-field')),
       '결정 전에 기도하기',
@@ -567,6 +617,15 @@ void main() {
         tester.widget<Align>(placement).alignment,
         expectedAlignments[index],
       );
+      final displayedTitle = tester
+          .widget<Text>(find.byKey(const Key('scene-intro-title')))
+          .data!;
+      for (final word in scene.title.split(' ')) {
+        final protectedWord = word.runes
+            .map((rune) => String.fromCharCode(rune))
+            .join('\u2060');
+        expect(displayedTitle, contains(protectedWord));
+      }
       expect(
         tester
             .getRect(find.byKey(const Key('scene-intro-card')))

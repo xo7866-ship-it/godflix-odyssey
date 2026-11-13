@@ -26,6 +26,7 @@ class JourneyScene {
     required this.meditation,
     this.devotionalReference = '',
     this.devotionalText = '',
+    this.devotionalHighlights = const [],
     required this.reflectionPrompt,
     required this.choices,
   });
@@ -44,6 +45,7 @@ class JourneyScene {
   final String meditation;
   final String devotionalReference;
   final String devotionalText;
+  final List<String> devotionalHighlights;
   final String reflectionPrompt;
   final List<JourneyChoice> choices;
 }

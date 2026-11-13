@@ -14,6 +14,16 @@ const _ink = Color(0xFF090B0F);
 const _sceneAudioVolume = 0.32;
 const _applicationAudioVolume = 0.09;
 const _compactLayoutBreakpoint = 700.0;
+const _wordJoiner = '\u2060';
+
+String _keepWordsTogether(String value) => value.splitMapJoin(
+  RegExp(r'\S+'),
+  onMatch: (match) => match
+      .group(0)!
+      .runes
+      .map((rune) => String.fromCharCode(rune))
+      .join(_wordJoiner),
+);
 
 class GodflixApp extends StatefulWidget {
   const GodflixApp({super.key, this.progressStore, this.fullscreenController});
@@ -1411,8 +1421,9 @@ class _JourneyScreenState extends State<JourneyScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  _scene.title,
+                                  _keepWordsTogether(_scene.title),
                                   key: const Key('scene-intro-title'),
+                                  semanticsLabel: _scene.title,
                                   style: Theme.of(context)
                                       .textTheme
                                       .headlineMedium
@@ -1525,7 +1536,7 @@ class _JourneyHeader extends StatelessWidget {
     JourneyStep.story => '줄거리',
     JourneyStep.discussion => '함께 나눔',
     JourneyStep.scripture => '말씀',
-    JourneyStep.reflection => '적용',
+    JourneyStep.reflection => '묵상 질문',
     JourneyStep.complete => '기록',
     JourneyStep.summary => '완주',
   };
@@ -1780,7 +1791,7 @@ class _JourneyLogSheet extends StatelessWidget {
                                 const SizedBox(height: 4),
                                 Text(
                                   completedSceneIds.contains(scene.id)
-                                      ? '말씀과 적용을 완료했습니다.'
+                                      ? '말씀과 묵상 질문을 완료했습니다.'
                                       : scene.question,
                                   style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.7),
@@ -2002,7 +2013,7 @@ class _ScriptureStep extends StatelessWidget {
         const SizedBox(height: 28),
         _PrimaryButton(
           key: const Key('open-reflection'),
-          label: '나에게 적용하기',
+          label: '묵상 질문으로 이동',
           icon: Icons.edit_note,
           onPressed: onNext,
         ),
@@ -2040,8 +2051,8 @@ class _DevotionalCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                SelectableText(
-                  scene.devotionalText,
+                SelectableText.rich(
+                  TextSpan(children: _devotionalSpans()),
                   key: const Key('devotional-text'),
                   style: const TextStyle(fontSize: 16, height: 1.8),
                 ),
@@ -2056,6 +2067,42 @@ class _DevotionalCard extends StatelessWidget {
               ),
             ),
     );
+  }
+
+  List<InlineSpan> _devotionalSpans() {
+    final ranges =
+        scene.devotionalHighlights
+            .map(
+              (text) => (start: scene.devotionalText.indexOf(text), text: text),
+            )
+            .where((range) => range.start >= 0)
+            .toList()
+          ..sort((left, right) => left.start.compareTo(right.start));
+
+    final spans = <InlineSpan>[];
+    var cursor = 0;
+    for (final range in ranges) {
+      if (cursor < range.start) {
+        spans.add(
+          TextSpan(text: scene.devotionalText.substring(cursor, range.start)),
+        );
+      }
+      spans.add(
+        TextSpan(
+          text: range.text,
+          style: const TextStyle(
+            color: Color(0xFF211807),
+            backgroundColor: Color(0xFFFFE8A3),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
+      cursor = range.start + range.text.length;
+    }
+    if (cursor < scene.devotionalText.length) {
+      spans.add(TextSpan(text: scene.devotionalText.substring(cursor)));
+    }
+    return spans;
   }
 }
 
@@ -2122,7 +2169,7 @@ class _ReflectionStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _StepPanel(
-      eyebrow: '나의 적용',
+      eyebrow: '묵상 질문',
       title: scene.reflectionPrompt,
       children: [
         TextField(
@@ -2197,7 +2244,7 @@ class _CompleteStep extends StatelessWidget {
         _SummaryRow(label: '나눔 질문', value: scene.question),
         _SummaryRow(label: '말씀', value: scene.scriptureReference),
         if (reflection.isNotEmpty)
-          _SummaryRow(label: '나의 적용', value: reflection),
+          _SummaryRow(label: '묵상 질문', value: reflection),
         const SizedBox(height: 28),
         _PrimaryButton(
           key: const Key('next-scene'),
@@ -2224,8 +2271,8 @@ class _SummaryStep extends StatelessWidget {
       children: [
         Text(
           answers.isEmpty
-              ? '각 장면에서 만난 질문과 말씀, 적용을 다시 떠올려 보세요.'
-              : '당신이 지나온 질문과 말씀, 적용을 한곳에 모았습니다.',
+              ? '각 장면에서 만난 질문과 말씀, 묵상을 다시 떠올려 보세요.'
+              : '당신이 지나온 질문과 말씀, 묵상을 한곳에 모았습니다.',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(height: 1.6),
         ),
         const SizedBox(height: 20),
