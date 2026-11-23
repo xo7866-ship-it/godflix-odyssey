@@ -91,7 +91,7 @@ const journeyScenes = <JourneyScene>[
     question: '작은 타협이 걷잡을 수 없이 커다란 죄에 빠지는 시발점이 되었던 적이 있나요?',
     discussion:
         '하나님의 말씀과 세상 사이에서 나는 보통 어떤 타협을 하나요?\n\n'
-        '그 타협이 연쇄 반응으로 어떤 일들이 벌어지나요?\n\n'
+        '그 타협의 연쇄 반응으로 어떤 일들이 벌어지나요?\n\n'
         '하나님께서는 이에 대해 뭐라고 말씀하실까요? 말씀을 함께 읽어봅시다.',
     imageAsset: 'assets/images/scene_3_cyclops.jpg',
     mobileImageAsset: 'assets/images/scene_3_cyclops_mobile.png',
@@ -215,14 +215,17 @@ const journeyScenes = <JourneyScene>[
     hook: '죽음이 부르는 ‘유혹’',
     story: '호기심이 그를 돛대에 묶습니다.\n\n듣고 싶어 묶였는데, 들은 것을 후회하고 만 노래.\n\n“그건 내가 어긴 약속들의 노래였어.”',
     question: '차라리 모르는 게 나았다고 생각하는 죄가 있나요?',
-    discussion: '처음에는 단순한 호기심이었을지도 모릅니다. 하지만 한 번 경험한 즐거움이 자꾸만 생각나고, 잊었다고 여겼던 마음이 어느 순간 다시 고개를 들기도 합니다. 어떤 경험은 지나간 뒤에도 오랫동안 마음에 남아 우리의 선택을 흔들어 놓습니다.',
+    discussion:
+        '겪어보니 괜히 해봤다 싶은 것이 있었나요?\n\n'
+        '이것을 몰랐던 때로 돌아가고 싶다, 하는 것이 있나요?\n\n'
+        '왜 후회하나요?',
     imageAsset: 'assets/images/scene_6_sirens.jpg',
     mobileImageAsset: 'assets/images/scene_6_sirens_mobile.png',
     audioAsset: 'assets/audio/scene_6_sirens.m4a',
     scriptureReference: '마태복음 18장 9절',
     scriptureText: '만일 네 눈이 너를 범죄케 하거든 빼어내버리라 한 눈으로 영생에 들어가는 것이 두 눈을 가지고 지옥불에 던지우는 것보다 나으니라.',
     meditation: '예수님의 말씀은 죄의 통로를 다루는 단호함을 보여 줍니다. 모든 것을 가까이에서 시험해 볼 필요는 없습니다. 약한 순간의 나를 보호하도록 환경과 관계를 미리 준비하는 것도 믿음의 행동입니다.',
-    reflectionPrompt: '유혹의 순간에 나를 지켜 줄 구체적인 장치와 사람은 무엇인가요?',
+    reflectionPrompt: '말씀을 읽고 하나님께서 나의 문제에 어떻게 대답해 주시는 것 같은지 이야기를 나눠보세요.',
     choices: [
       JourneyChoice(
         label: '가까이 가서 내가 얼마나 버티는지 시험한다',
@@ -330,7 +333,10 @@ const journeyScenes = <JourneyScene>[
     hook: '가장 두려운 결과 ‘몰살’',
     story: '커다란 배가 너무도 간단히 두 동강 납니다.\n\n닿지 않을 것을 알면서도 그는 그들을 향해 손을 뻗습니다.\n\n번쩍이는 번개 사이로 잠깐,\n\n서로는 다가오는 운명을 직감하며 마지막 시선을 나눕니다.\n\n그 다음 번개가 번쩍였을 때\n\n이제 거기에는 아무것도 없습니다.',
     question: '신앙의 여정에서 내가 가장 혹심하게 흔들렸던 적이 있나요?',
-    discussion: '하나님을 믿고 의지했음에도 이해할 수 없는 일이 일어날 때가 있습니다. 간절히 기도했지만 바라던 결과를 얻지 못하고, 소중히 여겼던 것을 잃어버리기도 합니다. 그런 순간에는 지금까지 믿어 왔던 것마저 낯설게 느껴지고, 하나님을 향한 마음에 깊은 침묵이 찾아오기도 합니다.',
+    discussion:
+        '무엇이 내 삶을 송두리째 흔들었나요?\n\n'
+        '나는 어떤 상황이었고 어떤 고민까지 해봤나요?\n\n'
+        '나는 그 상황을 어떻게 극복했나요? 혹은 극복하고 있나요? 혹은 극복하지 못했나요?',
     imageAsset: 'assets/images/scene_9_storm.png',
     mobileImageAsset: 'assets/images/scene_9_storm_mobile.png',
     audioAsset: 'assets/audio/scene_9_storm.m4a',
@@ -338,7 +344,7 @@ const journeyScenes = <JourneyScene>[
     scriptureText:
         '거짓 그리스도들과 거짓 선지자들이 일어나 큰 표적과 기사를 보여 할 수만 있으면 택하신 자들도 미혹하리라.',
     meditation: '혼란이 클수록 강렬한 신호와 단번의 해답이 진실처럼 보입니다. 예수님은 표적의 크기보다 진리를 분별하라고 경고하십니다. 폭풍 속에서는 작은 말씀의 습관과 공동체가 방향을 잃지 않게 하는 닻이 됩니다.',
-    reflectionPrompt: '상황이 흔들려도 계속 붙들 수 있는 말씀과 작은 습관은 무엇인가요?',
+    reflectionPrompt: '말씀을 읽고 하나님께서 나의 문제에 어떻게 대답해 주시는 것 같은지 이야기를 나눠보세요.',
     choices: [
       JourneyChoice(
         label: '가장 강렬하고 확실해 보이는 신호를 붙든다',
@@ -363,14 +369,18 @@ const journeyScenes = <JourneyScene>[
     hook: '무감각의 ‘무덤’',
     story: '늙은 남자는 자기가 기억하지 못하는 어떤 파편을 모읍니다.\n\n그의 기억은 승리에 머물러 있지만,\n\n그의 몸은 패배로 뒤틀려 있습니다.\n\n아주 오랜 꿈에서 깨어나, 그는 로투스 꽃잎을 내려놓고 비로소 묻습니다.\n\n“나 여기 얼마나 있었어?”',
     question: '신앙에서 길을 잃어버렸던 적이 있나요?',
-    discussion: '처음부터 하나님을 떠나려고 했던 것은 아닙니다. 그저 하루하루 바쁘게 살아가다 보니 기도하는 시간이 줄어들고, 어느새 예배도 익숙한 습관이 되어버립니다. 그렇게 시간이 흐른 어느 날, 하나님과 가까웠던 시절의 자신이 문득 낯설고 그립게 느껴지기도 합니다.',
+    discussion:
+        '언제, 왜, 길을 잃었다는 생각이 들었나요?\n\n'
+        '어떤 일들이 있었나요?\n\n'
+        '그때 나는 어떤 상태였나요? 혹은 지금, 나는 어떤 상태라고 생각하나요?\n\n'
+        '그렇다면 무엇이 나를 오늘 이 자리에 있게 했나요?',
     imageAsset: 'assets/images/scene_10_calypso.png',
     mobileImageAsset: 'assets/images/scene_10_calypso_mobile.png',
     audioAsset: 'assets/audio/scene_10_calypso.m4a',
     scriptureReference: '이사야 17장 9절',
     scriptureText: '그 날에 그 견고한 성읍들이 옛적에 이스라엘 자손 앞에서 버린 바 된 수풀 속의 처소와 작은 산 꼭대기의 처소 같아서 황폐하리니 이는 네가 네 구원의 하나님을 잊어버리며 네 능력의 반석을 마음에 두지 아니한 까닭이라.',
     meditation: '이사야는 하나님을 잊고 능력의 반석을 마음에 두지 않은 결과를 황폐함으로 묘사합니다. 무감각은 한번에 찾아오기보다 기억해야 할 분을 조금씩 놓치며 깊어집니다. 지금 길을 잃었다는 사실을 인정하고 하나님을 다시 기억하는 것이 돌아오는 첫걸음입니다.',
-    reflectionPrompt: '돌아갈 방향을 다시 잡기 위해 오늘 시작할 수 있는 한 걸음은 무엇인가요?',
+    reflectionPrompt: '말씀을 읽고 하나님께서 나의 문제에 어떻게 대답해 주시는 것 같은지 이야기를 나눠보세요.',
     choices: [
       JourneyChoice(
         label: '익숙한 무감각 속에 계속 머문다',
@@ -395,13 +405,18 @@ const journeyScenes = <JourneyScene>[
     hook: '숨어든 ‘진짜’',
     story: '“--”\n\n활 시위를 튕기는 소리에 연회장이 얼어붙습니다.\n\n화살이 일곱 도끼를 관통해 건너편 판자에 박혔을 때,\n\n일대의 혼란이 좌중을 압도하는 가운데에도\n\n그들의 귀에 생생히 들리는 울부짖음이 있습니다.\n\n“오디세우스가 돌아왔다.”',
     question: '조용하지만 분명히 역사하시는 하나님을 경험해 본 적이 있나요?',
-    discussion: '살아가는 동안에는 미처 깨닫지 못했던 은혜들이 있습니다. 힘들었던 시절 곁을 지켜준 사람, 예상하지 못한 순간에 열렸던 길, 무너지지 않고 지나온 시간들이 그렇습니다. 돌아보면 평범한 일상이라고 생각했던 순간들 속에도 하나님의 손길이 조용히 머물러 있었음을 깨닫게 됩니다.',
+    discussion:
+        '상황이 완전히 불리하게 돌아가고 있다고 느낀 적이 있나요?\n\n'
+        '어떤 상황이었고, 나는 어떤 처지에 있었나요?\n\n'
+        '신앙을 ‘지켜야’ 했을 때가 있었나요?\n\n'
+        '사단이 내 신앙을 완전히 장악하고 곧 잡아먹힐 것만 같았던 때가 있었나요?\n\n'
+        '그 일은 어떻게 결론이 났나요?',
     imageAsset: 'assets/images/scene_11_ithaca_return_v2.png',
     mobileImageAsset: 'assets/images/scene_11_ithaca_return_mobile.png',
     scriptureReference: '요한계시록 2장 25절',
     scriptureText: '다만 너희에게 있는 것을 내가 올 때까지 굳게 잡으라.',
     meditation: '보이지 않는다고 멈춘 것은 아닙니다. 하나님은 긴 여정 속에서도 사람과 시간을 준비하십니다. 우리에게 맡겨진 것은 결과를 크게 증명하는 일이 아니라 오늘 가진 믿음과 책임을 굳게 붙드는 일입니다.',
-    reflectionPrompt: '결과가 보이지 않아도 오늘 조용히 지킬 믿음의 행동은 무엇인가요?',
+    reflectionPrompt: '말씀을 읽고 하나님께서 나의 문제에 어떻게 대답해 주시는 것 같은지 이야기를 나눠보세요.',
     choices: [
       JourneyChoice(
         label: '큰 결과로 내 믿음을 증명하려 한다',
