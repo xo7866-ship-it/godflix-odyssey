@@ -28,6 +28,7 @@ class JourneyScene {
     this.devotionalText = '',
     this.devotionalHighlights = const [],
     required this.reflectionPrompt,
+    required this.closingMessage,
     required this.choices,
   });
 
@@ -47,6 +48,7 @@ class JourneyScene {
   final String devotionalText;
   final List<String> devotionalHighlights;
   final String reflectionPrompt;
+  final String closingMessage;
   final List<JourneyChoice> choices;
 }
 

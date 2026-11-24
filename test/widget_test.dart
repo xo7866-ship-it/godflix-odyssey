@@ -14,7 +14,9 @@ void main() {
       expect(scene.story, isNotEmpty);
       expect(scene.discussion, isNotEmpty);
       expect(scene.scriptureReference, isNotEmpty);
+      expect(scene.meditation, isNotEmpty);
       expect(scene.reflectionPrompt, isNotEmpty);
+      expect(scene.closingMessage, isNotEmpty);
     }
   });
 
@@ -165,6 +167,7 @@ void main() {
             scene.devotionalReference,
             scene.devotionalText,
             scene.reflectionPrompt,
+            scene.closingMessage,
             ...scene.choices.expand(
               (choice) => [choice.label, choice.tag, choice.application],
             ),
@@ -184,11 +187,15 @@ void main() {
     final ithaca = journeyScenes.firstWhere((scene) => scene.id == 'ithaca');
     final troy = journeyScenes.firstWhere((scene) => scene.id == 'troy');
 
-    expect(devotionalScenes, hasLength(7));
+    expect(devotionalScenes, hasLength(11));
     expect(ithaca.devotionalReference, '시대의 소망 323-324p');
     expect(ithaca.devotionalText, contains('악에 대한 유일의 방어'));
     expect(troy.devotionalReference, '부조와 선지자 71장');
     expect(troy.devotionalText, contains('비밀리에 원칙의 요새를 침식'));
+    expect(journeyScenes[5].devotionalReference, '시대의 소망 2장');
+    expect(journeyScenes[8].devotionalReference, '시대의 소망 35장');
+    expect(journeyScenes[9].devotionalReference, '실물교훈 16장');
+    expect(journeyScenes[10].devotionalReference, '마지막날 사건들 2장');
   });
 
   test('PDF highlights and meditation questions are connected', () {
@@ -202,8 +209,12 @@ void main() {
       'cyclops',
       'circe',
       'underworld',
+      'sirens',
       'scylla',
       'helios',
+      'storm',
+      'calypso',
+      'return',
     ]);
     for (final scene in highlightedScenes) {
       for (final highlight in scene.devotionalHighlights) {
@@ -212,21 +223,39 @@ void main() {
     }
 
     expect(
-      journeyScenes.first.reflectionPrompt,
-      '말씀을 읽고 하나님께서 나의 문제에 어떻게 대답해 주시는 것 같은지 이야기를 나눠보세요.',
+      journeyScenes.map((scene) => scene.reflectionPrompt),
+      everyElement('말씀을 통해, 하나님께서 나의 문제에 어떻게 대답해 주시는 것 같나요?'),
     );
-    expect(
-      journeyScenes[2].reflectionPrompt,
-      contains('하나님 대신 사랑하는 그것이 곧 일만 악의 뿌리가 됩니다.'),
-    );
-    expect(
-      journeyScenes[6].reflectionPrompt,
-      contains('백성들의 존경심마저 크게 잃어버리고 말았습니다.'),
-    );
-    expect(
-      journeyScenes.skip(7).map((scene) => scene.reflectionPrompt),
-      everyElement('말씀을 읽고 하나님께서 나의 문제에 어떻게 대답해 주시는 것 같은지 이야기를 나눠보세요.'),
-    );
+  });
+
+  test('leader manual directions and closing messages are connected', () {
+    expect(journeyScenes.map((scene) => scene.meditation), [
+      '내 마음에 하나님이 안 계시면 사단이 들어옵니다.\n\n악에 대한 유일한 방어막은 내 마음의 왕좌에 하나님을 모시는 것입니다.',
+      '우리 철옹성을 뚫는 은밀한 유혹이 있습니다.\n\n우리는 경계를 늦추지 말아야 합니다.',
+      '본문은 ‘돈’에 초점이 맞추어져 있지만 원리는 모두 같습니다.\n\n하나님 대신 사랑하는 그것이 곧 일만 악의 뿌리가 됩니다.',
+      '악은 항상 나쁘게만 다가오지 않습니다.\n\n우리에게 오는 ‘좋은 것’이 정말 무엇인지 가려낼 수 있는 안목이 필요합니다.',
+      '사단은 우리를 죽이고 싶어 한다는 사실을 꼭 기억해야 합니다.\n\n하나님만이 우리가 얻을 수 있는 산 대답이 되어주십니다.',
+      '우리가 하나님 뜻에 순종했다면 더 많은 것을 누릴 수 있었을 것입니다.\n\n하나님 안에서는 지나간 후회가 과거로 끝나지 않습니다.\n\n놓친 축복은 우리가 어떤 약속을 받았는지를 상기시킵니다.\n\n우리가 돌이키면, 우리는 지금도 그 가능성에 기대를 걸어볼 수 있습니다.',
+      '바리새인들의 오만하고 시기질투하는 마음이\n\n예수님께서 주시는 구원도 잃고\n\n백성들의 신망도 잃게 만들었습니다.',
+      '끝나지 않는 길고 어두운 순간 속에\n\n이 끝이 막다른 길이어서 내 목숨까지 요구하는 순간에도\n\n하나님께서는 그 길을 이미 모두 걸으신 분으로서\n\n내 곁에 함께하십니다.',
+      '가장 큰 절망 속에 결국 털썩 주저앉았을 때,\n\n하늘의 평화를 가지고 우리를 바라보시는 예수님이 계십니다.',
+      '자각하지 못하던 내 황폐함을 깨닫게 될 때가 있습니다.\n\n그래도 우리는 아주 망하지 않았습니다.\n\n우리에겐 돌아갈 아버지 집이 있기 때문입니다.',
+      '상황이 나를 압도할 때, 상황 위에서 모든 것을 주관하시는 하나님이 계십니다.\n\n그분이 나를 사랑하시기에,\n\n우리는 나를 인도하시는 그분의 섭리를 신뢰할 수 있습니다.',
+    ]);
+
+    expect(journeyScenes.map((scene) => scene.closingMessage), [
+      '우리 마음의 왕좌에 하나님을 모시면\n\n우리 삶에 헷갈릴 일도 없고 흔들릴 일도 없어질 것입니다.\n\n하나님을 마음에 모시는 우리가 되었으면 좋겠습니다.',
+      '사단은 우리가 방심하기를 기다리고,\n\n가장 은밀하고 작은 죄를 우리 마음에 들여보냅니다.\n\n그리고 그것이 우리 온 마음을 트로이의 불바다가 되게 할 것입니다.\n\n사단의 작은 유혹에서 우리 마음을 지킵시다.',
+      '세상을 사랑하는 마음을 ‘포기’할 수 있는 우리가 되었으면 좋겠습니다.',
+      '나에게 있어서 ‘좋은 것’이라고 생각했던 것이\n\n진짜 그러한가, 아닌가 가려낼 영적인 안목을 기르는 우리가 되었으면 좋겠습니다.',
+      '우리가 살 방법을 얻을 수 있는 곳은 오직 하나님 품 안입니다.\n\n하나님 외에는 구원이 없습니다.',
+      '하나님 안에서는 아쉬움이 아쉬움으로 끝나지 않습니다.\n\n놓친 축복보다 더 큰 축복을 기대할 수 있는 하나님의 허락에 순종하는\n\n우리가 되었으면 좋겠습니다.',
+      '최악의 상황이라는 생각이 들 때,\n\n언제나 우리에게 한 가지 선택지가 더 있다는 사실을 잊지 맙시다.\n\n하늘을 의지하는 선택권입니다.',
+      '하나님은 위로의 하나님이십니다.\n\n끝이 보이지 않는 순간에\n\n분명 우리 곁에 계셔서\n\n우리와 함께 견디고 계시는 예수님을 발견하는 우리가 되기를 바랍니다.',
+      '압도적인 재앙 속에서 우리 부르짖음을 들으시는 귀가 있다는 것을\n\n잊지 않는 우리가 되었으면 좋겠습니다.',
+      '어떤 상황 속에서도 나를 향한 아버지의 사랑이 아직 유효하다는 확신을 잃지 않는\n\n우리가 되었으면 좋겠습니다.',
+      '결코 무관심하지 않으신 하나님의 섭리를 기억하는\n\n우리가 되었으면 좋겠습니다.',
+    ]);
   });
 
   test('Ithaca story uses the approved three paragraphs', () {
@@ -372,6 +401,14 @@ void main() {
     await _tapVisible(tester, find.byKey(const Key('open-reflection')));
     await _pumpTransition(tester);
     expect(find.text('묵상 질문'), findsWidgets);
+    expect(find.byKey(const Key('meditation-direction')), findsOneWidget);
+    expect(find.text('묵상 방향성'), findsOneWidget);
+    expect(
+      find.text(
+        '내 마음에 하나님이 안 계시면 사단이 들어옵니다.\n\n악에 대한 유일한 방어막은 내 마음의 왕좌에 하나님을 모시는 것입니다.',
+      ),
+      findsOneWidget,
+    );
     await tester.enterText(
       find.byKey(const Key('reflection-field')),
       '결정 전에 기도하기',
@@ -382,6 +419,15 @@ void main() {
     await _pumpTransition(tester);
 
     expect(store.readCompletedSceneIds(), {'ithaca'});
+    expect(find.text('마무리 멘트'), findsOneWidget);
+    expect(find.byKey(const Key('closing-message')), findsOneWidget);
+    expect(
+      find.text(
+        '우리 마음의 왕좌에 하나님을 모시면\n\n우리 삶에 헷갈릴 일도 없고 흔들릴 일도 없어질 것입니다.\n\n하나님을 마음에 모시는 우리가 되었으면 좋겠습니다.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('나눔 질문'), findsNothing);
     await _tapVisible(tester, find.byKey(const Key('next-scene')));
     await _pumpTransition(tester);
     await _revealScene(tester);

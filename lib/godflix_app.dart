@@ -1495,7 +1495,6 @@ class _JourneyScreenState extends State<JourneyScreen> {
       JourneyStep.complete => _CompleteStep(
         key: ValueKey('${_scene.id}-complete'),
         scene: _scene,
-        reflection: _reflectionController.text.trim(),
         isLast: _sceneIndex == journeyScenes.length - 1,
         onNext: _nextScene,
       ),
@@ -1537,7 +1536,7 @@ class _JourneyHeader extends StatelessWidget {
     JourneyStep.discussion => '함께 나눔',
     JourneyStep.scripture => '말씀',
     JourneyStep.reflection => '묵상 질문',
-    JourneyStep.complete => '기록',
+    JourneyStep.complete => '마무리',
     JourneyStep.summary => '완주',
   };
 
@@ -1999,17 +1998,6 @@ class _ScriptureStep extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _DevotionalCard(scene: scene),
-        const SizedBox(height: 20),
-        Text(
-          '말씀 묵상',
-          style: Theme.of(context).textTheme.titleMedium
-              ?.copyWith(color: _gold, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          scene.meditation,
-          style: const TextStyle(fontSize: 16, height: 1.75),
-        ),
         const SizedBox(height: 28),
         _PrimaryButton(
           key: const Key('open-reflection'),
@@ -2168,6 +2156,31 @@ class _ReflectionStep extends StatelessWidget {
       eyebrow: '묵상 질문',
       title: scene.reflectionPrompt,
       children: [
+        Container(
+          key: const Key('meditation-direction'),
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: _gold.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: _gold.withValues(alpha: 0.45)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '묵상 방향성',
+                style: TextStyle(color: _gold, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                scene.meditation,
+                style: const TextStyle(fontSize: 16, height: 1.7),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
         TextField(
           key: const Key('reflection-field'),
           controller: controller,
@@ -2208,7 +2221,7 @@ class _ReflectionStep extends StatelessWidget {
         const SizedBox(height: 24),
         _PrimaryButton(
           key: const Key('complete-scene'),
-          label: '장면 기록하기',
+          label: '장면 마무리하기',
           icon: Icons.bookmark_added,
           onPressed: onComplete,
         ),
@@ -2221,26 +2234,35 @@ class _CompleteStep extends StatelessWidget {
   const _CompleteStep({
     super.key,
     required this.scene,
-    required this.reflection,
     required this.isLast,
     required this.onNext,
   });
 
   final JourneyScene scene;
-  final String reflection;
   final bool isLast;
   final VoidCallback onNext;
 
   @override
   Widget build(BuildContext context) {
     return _StepPanel(
-      eyebrow: '장면 완료',
+      eyebrow: '마무리 멘트',
       title: scene.title,
       children: [
-        _SummaryRow(label: '나눔 질문', value: scene.question),
-        _SummaryRow(label: '말씀', value: scene.scriptureReference),
-        if (reflection.isNotEmpty)
-          _SummaryRow(label: '묵상 질문', value: reflection),
+        Container(
+          key: const Key('closing-message'),
+          width: double.infinity,
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: _gold.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: _gold.withValues(alpha: 0.48)),
+          ),
+          child: Text(
+            scene.closingMessage,
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(height: 1.75, fontWeight: FontWeight.w700),
+          ),
+        ),
         const SizedBox(height: 28),
         _PrimaryButton(
           key: const Key('next-scene'),
@@ -2312,38 +2334,6 @@ class _SummaryStep extends StatelessWidget {
           onPressed: onReset,
         ),
       ],
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 82,
-            child: Text(
-              label,
-              style: const TextStyle(color: _gold, fontWeight: FontWeight.w800),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 16, height: 1.5),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
