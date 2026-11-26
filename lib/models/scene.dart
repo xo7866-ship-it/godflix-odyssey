@@ -51,10 +51,3 @@ class JourneyScene {
   final String closingMessage;
   final List<JourneyChoice> choices;
 }
-
-class JourneyAnswer {
-  const JourneyAnswer({required this.scene, required this.reflection});
-
-  final JourneyScene scene;
-  final String reflection;
-}

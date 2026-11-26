@@ -533,6 +533,57 @@ void main() {
     expect(assets, contains('assets/images/scene_11_ithaca_ship.png'));
   });
 
+  testWidgets('last scene opens the one-screen ending credits', (tester) async {
+    _setViewport(tester, const Size(1280, 900));
+    await tester.pumpWidget(GodflixApp(progressStore: ProgressStore()));
+    final textTheme = Theme.of(tester.element(find.byType(Scaffold).first))
+        .textTheme;
+    expect(textTheme.bodyMedium?.height, 1.6);
+    expect(textTheme.headlineMedium?.height, 1.28);
+
+    await tester.tap(find.byKey(const Key('start-journey')));
+    await _pumpDeparture(tester);
+    await tester.tap(find.byKey(const Key('skip-overview-intro')));
+    await _pumpTransition(tester);
+    await _tapVisible(tester, find.byKey(const Key('map-scene-10')));
+    await _pumpTransition(tester);
+    await _revealScene(tester);
+    await _tapVisible(tester, find.byKey(const Key('open-choices')));
+    await _pumpTransition(tester);
+    await _tapVisible(tester, find.byKey(const Key('open-scripture')));
+    await _pumpTransition(tester);
+    await _tapVisible(tester, find.byKey(const Key('open-reflection')));
+    await _pumpTransition(tester);
+    await _tapVisible(tester, find.byKey(const Key('complete-scene')));
+    await _pumpTransition(tester);
+
+    expect(find.text('엔딩 크레딧'), findsOneWidget);
+    await _tapVisible(tester, find.byKey(const Key('next-scene')));
+    await _pumpTransition(tester);
+
+    expect(find.byKey(const Key('ending-credits')), findsOneWidget);
+    expect(find.text('GODFLIX'), findsOneWidget);
+    expect(find.text('THE ODYSSEY'), findsOneWidget);
+    final creditLabels = tester
+        .widgetList<Text>(
+          find.descendant(
+            of: find.byKey(const Key('ending-credits')),
+            matching: find.byType(Text),
+          ),
+        )
+        .map((text) => text.semanticsLabel)
+        .whereType<String>()
+        .toList();
+    expect(creditLabels, contains('기획 · 연출'));
+    expect(creditLabels.where((label) => label == '신태섭'), hasLength(2));
+    expect(creditLabels.where((label) => label == '임다비'), hasLength(3));
+    expect(creditLabels, contains('동중한합회 청소년부'));
+    expect(find.text('자료 출처'), findsNothing);
+    expect(find.byKey(const Key('toggle-sound')), findsNothing);
+    expect(find.text('처음부터 다시 항해하기'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('intro skip, journey log, and back navigation work', (
     tester,
   ) async {

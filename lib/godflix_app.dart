@@ -180,6 +180,16 @@ class _GodflixAppState extends State<GodflixApp> {
 
   @override
   Widget build(BuildContext context) {
+    final baseTextTheme = ThemeData.dark().textTheme.apply(
+      fontFamily: 'Noto Sans KR',
+      fontFamilyFallback: const [
+        'Malgun Gothic',
+        'Apple SD Gothic Neo',
+        'sans-serif',
+      ],
+      bodyColor: Colors.white,
+      displayColor: Colors.white,
+    );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'GODFLIX 오디세이',
@@ -191,15 +201,26 @@ class _GodflixAppState extends State<GodflixApp> {
           secondary: Color(0xFFE50914),
           surface: Color(0xFF151922),
         ),
-        textTheme: ThemeData.dark().textTheme.apply(
-          fontFamily: 'Noto Sans KR',
-          fontFamilyFallback: const [
-            'Malgun Gothic',
-            'Apple SD Gothic Neo',
-            'sans-serif',
-          ],
-          bodyColor: Colors.white,
-          displayColor: Colors.white,
+        textTheme: baseTextTheme.copyWith(
+          bodyLarge: baseTextTheme.bodyLarge?.copyWith(
+            height: 1.65,
+            letterSpacing: 0.1,
+          ),
+          bodyMedium: baseTextTheme.bodyMedium?.copyWith(
+            height: 1.6,
+            letterSpacing: 0.1,
+          ),
+          bodySmall: baseTextTheme.bodySmall?.copyWith(height: 1.5),
+          titleLarge: baseTextTheme.titleLarge?.copyWith(
+            height: 1.4,
+            letterSpacing: -0.2,
+          ),
+          titleMedium: baseTextTheme.titleMedium?.copyWith(height: 1.45),
+          headlineSmall: baseTextTheme.headlineSmall?.copyWith(height: 1.3),
+          headlineMedium: baseTextTheme.headlineMedium?.copyWith(
+            height: 1.28,
+            letterSpacing: -0.5,
+          ),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
@@ -981,7 +1002,6 @@ class JourneyScreen extends StatefulWidget {
 class _JourneyScreenState extends State<JourneyScreen> {
   late int _sceneIndex;
   late JourneyStep _step;
-  final _answers = <JourneyAnswer>[];
   final _preloadedImageAssets = <String>{};
   final _preloadedAudioAssets = <String>{};
 
@@ -1192,8 +1212,6 @@ class _JourneyScreenState extends State<JourneyScreen> {
   }
 
   void _completeScene() {
-    _answers.removeWhere((answer) => answer.scene.id == _scene.id);
-    _answers.add(JourneyAnswer(scene: _scene, reflection: ''));
     widget.onProgress(_scene.id);
     _goTo(JourneyStep.complete);
   }
@@ -1216,7 +1234,8 @@ class _JourneyScreenState extends State<JourneyScreen> {
     final compact = MediaQuery.sizeOf(context).width < _compactLayoutBreakpoint;
     final showScene = _step != JourneyStep.summary;
     final backgroundOnly = _step == JourneyStep.background;
-    final cinematicClosing = _step == JourneyStep.complete;
+    final cinematicStep =
+        _step == JourneyStep.complete || _step == JourneyStep.summary;
     final brightenScene =
         _step == JourneyStep.story || _step == JourneyStep.discussion;
     final sceneVisual = _sceneVisual(showScene ? _scene.id : 'summary');
@@ -1275,7 +1294,7 @@ class _JourneyScreenState extends State<JourneyScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: cinematicClosing
+                  colors: cinematicStep
                       ? const [
                           Color(0x70000000),
                           Color(0x8F08090C),
@@ -1310,7 +1329,7 @@ class _JourneyScreenState extends State<JourneyScreen> {
                 child: SafeArea(
                   child: Column(
                     children: [
-                      if (!backgroundOnly)
+                      if (!backgroundOnly && _step != JourneyStep.summary)
                         _JourneyHeader(
                           sceneIndex: _sceneIndex,
                           step: _step,
@@ -1338,7 +1357,7 @@ class _JourneyScreenState extends State<JourneyScreen> {
                                   child: child,
                                 ),
                               ),
-                          child: _step == JourneyStep.complete
+                          child: cinematicStep
                               ? Padding(
                                   key: ValueKey(
                                     '${_scene.id}-${_step.name}-cinematic',
@@ -1516,9 +1535,8 @@ class _JourneyScreenState extends State<JourneyScreen> {
         isLast: _sceneIndex == journeyScenes.length - 1,
         onNext: _nextScene,
       ),
-      JourneyStep.summary => _SummaryStep(
+      JourneyStep.summary => _EndingCreditsStep(
         key: const ValueKey('summary'),
-        answers: _answers,
         onReset: widget.onReset,
       ),
     };
@@ -1555,7 +1573,7 @@ class _JourneyHeader extends StatelessWidget {
     JourneyStep.scripture => '말씀',
     JourneyStep.reflection => '묵상 질문',
     JourneyStep.complete => '마무리',
-    JourneyStep.summary => '완주',
+    JourneyStep.summary => '엔딩 크레딧',
   };
 
   @override
@@ -2292,8 +2310,8 @@ class _CompleteStep extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                icon: Icon(isLast ? Icons.auto_stories : Icons.arrow_forward),
-                label: Text(isLast ? '여정 돌아보기' : '다음 장면으로'),
+                icon: Icon(isLast ? Icons.movie_outlined : Icons.arrow_forward),
+                label: Text(isLast ? '엔딩 크레딧' : '다음 장면으로'),
               ),
             ),
           ],
@@ -2303,65 +2321,123 @@ class _CompleteStep extends StatelessWidget {
   }
 }
 
-class _SummaryStep extends StatelessWidget {
-  const _SummaryStep({super.key, required this.answers, required this.onReset});
+class _EndingCreditsStep extends StatelessWidget {
+  const _EndingCreditsStep({super.key, required this.onReset});
 
-  final List<JourneyAnswer> answers;
+  static const _credits = <({String role, String name})>[
+    (role: '기획 · 연출', name: '신태섭'),
+    (role: '원고 · 묵상 구성', name: '임다비'),
+    (role: '성경 및 신학 검수', name: '임다비'),
+    (role: '웹 개발 · 인터랙션', name: '신태섭'),
+    (role: '이미지 · 사운드 디자인', name: '임다비'),
+    (role: '제작 교회 · 기관', name: '동중한합회 청소년부'),
+  ];
+
   final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context) {
-    return _StepPanel(
-      eyebrow: 'JOURNEY COMPLETE',
-      title: '다시 이타카를 향해',
-      children: [
-        Text(
-          answers.isEmpty
-              ? '각 장면에서 만난 질문과 말씀, 묵상을 다시 떠올려 보세요.'
-              : '당신이 지나온 질문과 말씀, 묵상을 한곳에 모았습니다.',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(height: 1.6),
-        ),
-        const SizedBox(height: 20),
-        for (final answer in answers) ...[
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  answer.scene.title,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 8),
-                Text(answer.scene.question),
-                const SizedBox(height: 6),
-                Text(
-                  answer.scene.scriptureReference,
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-                ),
-                if (answer.reflection.isNotEmpty) ...[
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 700;
+        return Center(
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 920),
+              child: Column(
+                key: const Key('ending-credits'),
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'GODFLIX',
+                    style: TextStyle(
+                      color: Color(0xFFE50914),
+                      fontSize: 32,
+                      letterSpacing: 5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  Text(answer.reflection),
+                  Text(
+                    'THE ODYSSEY',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.72),
+                      fontSize: 13,
+                      letterSpacing: 4,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: compact ? 28 : 38),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    runAlignment: WrapAlignment.center,
+                    spacing: 34,
+                    runSpacing: compact ? 18 : 24,
+                    children: [
+                      for (final credit in _credits)
+                        SizedBox(
+                          width: compact ? constraints.maxWidth : 250,
+                          child: Column(
+                            children: [
+                              Text(
+                                _keepWordsTogether(credit.role),
+                                semanticsLabel: credit.role,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: _gold,
+                                  fontSize: 12,
+                                  letterSpacing: 1.1,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                _keepWordsTogether(credit.name),
+                                semanticsLabel: credit.name,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: compact ? 28 : 38),
+                  Text(
+                    '이 여정을 함께 걸어주신 모든 분께 감사드립니다.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.82),
+                      fontSize: compact ? 14 : 16,
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  FilledButton.icon(
+                    key: const Key('reset-journey'),
+                    onPressed: onReset,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _gold,
+                      foregroundColor: const Color(0xFF201807),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 26,
+                        vertical: 16,
+                      ),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    icon: const Icon(Icons.restart_alt),
+                    label: const Text('처음부터 다시 항해하기'),
+                  ),
                 ],
-              ],
+              ),
             ),
           ),
-        ],
-        const SizedBox(height: 20),
-        _PrimaryButton(
-          key: const Key('reset-journey'),
-          label: '새 여정 시작하기',
-          icon: Icons.restart_alt,
-          onPressed: onReset,
-        ),
-      ],
+        );
+      },
     );
   }
 }
