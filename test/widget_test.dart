@@ -450,6 +450,11 @@ void main() {
       find.byKey(const Key('closing-message')),
     );
     expect(closingMessage.style?.fontSize, 40);
+    final closingSpans = (closingMessage.textSpan! as TextSpan).children!;
+    final finalParagraph = closingSpans.whereType<TextSpan>().lastWhere(
+      (span) => span.text?.trim().isNotEmpty ?? false,
+    );
+    expect(finalParagraph.style?.color, const Color(0xFFF5C542));
     expect(
       find.text(
         '우리 마음의 왕좌에 하나님을 모시면\n\n우리 삶에 헷갈릴 일도 없고 흔들릴 일도 없어질 것입니다.\n\n하나님을 마음에 모시는 우리가 되었으면 좋겠습니다.',
@@ -562,8 +567,10 @@ void main() {
     await _pumpTransition(tester);
 
     expect(find.byKey(const Key('ending-credits')), findsOneWidget);
+    expect(find.byKey(const Key('summary-black-background')), findsOneWidget);
     expect(find.text('GODFLIX'), findsOneWidget);
     expect(find.text('THE ODYSSEY'), findsOneWidget);
+    expect(find.text('긴 항해의 끝에서, 우리는 다시 왕을 맞이합니다.'), findsOneWidget);
     final creditLabels = tester
         .widgetList<Text>(
           find.descendant(
@@ -677,6 +684,38 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('journey map expands from iPad portrait to desktop width', (
+    tester,
+  ) async {
+    _setViewport(tester, const Size(768, 1024));
+    await tester.pumpWidget(GodflixApp(progressStore: ProgressStore()));
+
+    await tester.tap(find.byKey(const Key('start-journey')));
+    await _pumpDeparture(tester);
+    await tester.tap(find.byKey(const Key('skip-overview-intro')));
+    await _pumpTransition(tester);
+
+    expect(find.byKey(const Key('regular-map-layout')), findsOneWidget);
+    expect(find.byKey(const Key('compact-map-layout')), findsNothing);
+    expect(
+      tester.getSize(find.byKey(const Key('regular-map-layout'))).width,
+      greaterThan(650),
+    );
+
+    tester.view.physicalSize = const Size(1440, 900);
+    await tester.pump(const Duration(milliseconds: 800));
+
+    expect(
+      tester.getSize(find.byKey(const Key('overview-panel'))).width,
+      closeTo(1120, 0.1),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('regular-map-layout'))).width,
+      greaterThan(1000),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('compact step transitions restart at the top without a jump', (
     tester,
   ) async {
@@ -748,7 +787,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('compact episode intro titles use scene-specific safe areas', (
+  testWidgets('all episode intros use cinematic titles that clear the button', (
     tester,
   ) async {
     _setViewport(tester, const Size(390, 844));
@@ -768,6 +807,7 @@ void main() {
     ];
 
     for (var index = 0; index < journeyScenes.length; index++) {
+      tester.view.physicalSize = const Size(390, 844);
       final scene = journeyScenes[index];
       await tester.pumpWidget(
         MaterialApp(
@@ -795,23 +835,28 @@ void main() {
         tester.widget<Align>(placement).alignment,
         expectedAlignments[index],
       );
-      final displayedTitle = tester
-          .widget<Text>(find.byKey(const Key('scene-intro-title')))
-          .data!;
+      final title = find.byKey(const Key('scene-intro-title'));
+      final card = find.byKey(const Key('scene-intro-card'));
+      final button = find.byKey(const Key('continue-scene-intro'));
+      final displayedTitle = tester.widget<Text>(title).data!;
       for (final word in scene.title.split(' ')) {
         final protectedWord = word.runes
             .map((rune) => String.fromCharCode(rune))
             .join('\u2060');
         expect(displayedTitle, contains(protectedWord));
       }
+      expect(tester.widget<Text>(title).style?.fontSize, 32);
+      expect(tester.getRect(card).overlaps(tester.getRect(button)), isFalse);
+
+      tester.view.physicalSize = const Size(1280, 800);
+      await tester.pump();
+      expect(tester.widget<Text>(title).style?.fontSize, 40);
+      expect(tester.getSize(card).width, 680);
       expect(
-        tester
-            .getRect(find.byKey(const Key('scene-intro-card')))
-            .overlaps(
-              tester.getRect(find.byKey(const Key('continue-scene-intro'))),
-            ),
-        isFalse,
+        (tester.widget<Container>(card).decoration! as BoxDecoration).color,
+        const Color(0xEB090B0F),
       );
+      expect(tester.getRect(card).overlaps(tester.getRect(button)), isFalse);
     }
     expect(tester.takeException(), isNull);
   });
@@ -838,6 +883,18 @@ void main() {
         .byKey(const Key('continue-scene-intro'))
         .hitTestable();
     expect(introTitle, findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('scene-intro-card'))).width,
+      closeTo(680, 0.1),
+    );
+    final introCard = tester.widget<Container>(
+      find.byKey(const Key('scene-intro-card')),
+    );
+    expect(
+      (introCard.decoration! as BoxDecoration).color,
+      const Color(0xEB090B0F),
+    );
+    expect(tester.widget<Text>(introTitle).style?.fontSize, 40);
     expect(tester.getTopLeft(introTitle).dx, lessThan(80));
     expect(tester.getTopLeft(introTitle).dy, lessThan(200));
     expect(tester.getBottomRight(introNext).dx, greaterThan(900));

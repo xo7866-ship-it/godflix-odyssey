@@ -14,6 +14,7 @@ const _ink = Color(0xFF090B0F);
 const _sceneAudioVolume = 0.32;
 const _applicationAudioVolume = 0.09;
 const _compactLayoutBreakpoint = 700.0;
+const _compactMapBreakpoint = 620.0;
 const _wordJoiner = '\u2060';
 
 String _keepWordsTogether(String value) => value.splitMapJoin(
@@ -524,6 +525,13 @@ class _StoryOverviewScreenState extends State<StoryOverviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final overviewMaxWidth = viewportWidth >= 1200
+        ? 1120.0
+        : viewportWidth >= 900
+        ? 960.0
+        : 760.0;
+    final overviewHorizontalPadding = viewportWidth < 600 ? 12.0 : 20.0;
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
@@ -552,11 +560,19 @@ class _StoryOverviewScreenState extends State<StoryOverviewScreen> {
                       ),
                       SafeArea(
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
+                          padding: EdgeInsets.fromLTRB(
+                            overviewHorizontalPadding,
+                            24,
+                            overviewHorizontalPadding,
+                            36,
+                          ),
                           child: Align(
                             alignment: Alignment.topCenter,
                             child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 760),
+                              key: const Key('overview-panel'),
+                              constraints: BoxConstraints(
+                                maxWidth: overviewMaxWidth,
+                              ),
                               child: _StepPanel(
                                 eyebrow: 'THE ODYSSEY',
                                 title: '오디세이 여정 지도',
@@ -569,7 +585,12 @@ class _StoryOverviewScreenState extends State<StoryOverviewScreen> {
                                         ?.copyWith(height: 1.75),
                                   ),
                                   const SizedBox(height: 20),
-                                  Row(
+                                  Wrap(
+                                    alignment: WrapAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    spacing: 16,
+                                    runSpacing: 10,
                                     children: [
                                       Text(
                                         '${widget.completedSceneIds.length} / ${journeyScenes.length} 장면 완료',
@@ -578,7 +599,6 @@ class _StoryOverviewScreenState extends State<StoryOverviewScreen> {
                                           fontWeight: FontWeight.w900,
                                         ),
                                       ),
-                                      const Spacer(),
                                       OutlinedButton.icon(
                                         key: const Key('map-journey-log'),
                                         onPressed: () =>
@@ -699,7 +719,7 @@ class _AncientJourneyMap extends StatelessWidget {
       builder: (context, constraints) {
         final mapWidth = constraints.maxWidth;
         final mapHeight = mapWidth * 9 / 16;
-        if (mapWidth < _compactLayoutBreakpoint) {
+        if (mapWidth < _compactMapBreakpoint) {
           return Column(
             key: const Key('compact-map-layout'),
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -735,6 +755,7 @@ class _AncientJourneyMap extends StatelessWidget {
             ],
           );
         }
+        final markerScale = (mapWidth / 760).clamp(1.0, 1.25);
         return ClipRRect(
           key: const Key('regular-map-layout'),
           borderRadius: BorderRadius.circular(20),
@@ -778,6 +799,7 @@ class _AncientJourneyMap extends StatelessWidget {
                           key: Key('map-scene-$index'),
                           number: index + 1,
                           label: _labels[index],
+                          scale: markerScale,
                           complete: completedSceneIds.contains(
                             journeyScenes[index].id,
                           ),
@@ -881,12 +903,14 @@ class _MapMarkerButton extends StatelessWidget {
     super.key,
     required this.number,
     required this.label,
+    required this.scale,
     required this.complete,
     required this.onTap,
   });
 
   final int number;
   final String label;
+  final double scale;
   final bool complete;
   final VoidCallback onTap;
 
@@ -905,13 +929,18 @@ class _MapMarkerButton extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(999),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 4, 10, 4),
+            padding: EdgeInsets.fromLTRB(
+              4 * scale,
+              4 * scale,
+              10 * scale,
+              4 * scale,
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 28,
-                  height: 28,
+                  width: 28 * scale,
+                  height: 28 * scale,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: complete ? _gold : const Color(0xFF342B1E),
@@ -921,22 +950,22 @@ class _MapMarkerButton extends StatelessWidget {
                     '$number',
                     style: TextStyle(
                       color: complete ? const Color(0xFF241A04) : _gold,
-                      fontSize: 12,
+                      fontSize: 12 * scale,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
-                const SizedBox(width: 7),
+                SizedBox(width: 7 * scale),
                 Text(
                   label,
                   style: const TextStyle(
                     color: Color(0xFFFFF1C8),
                     fontWeight: FontWeight.w800,
-                  ).copyWith(fontSize: 11),
+                  ).copyWith(fontSize: 11 * scale),
                 ),
                 if (complete) ...[
-                  const SizedBox(width: 5),
-                  const Icon(Icons.check, size: 14, color: _gold),
+                  SizedBox(width: 5 * scale),
+                  Icon(Icons.check, size: 14 * scale, color: _gold),
                 ],
               ],
             ),
@@ -1248,7 +1277,12 @@ class _JourneyScreenState extends State<JourneyScreen> {
         children: [
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 700),
-            child: showScene && _scene.id == 'return' && !compact
+            child: !showScene
+                ? const ColoredBox(
+                    key: ValueKey('summary-black-background'),
+                    color: Colors.black,
+                  )
+                : _scene.id == 'return' && !compact
                 ? _LayeredSailingBackground(
                     key: const ValueKey('return-cinematic-background'),
                     plateAsset: 'assets/images/scene_11_ithaca_plate.png',
@@ -1258,15 +1292,11 @@ class _JourneyScreenState extends State<JourneyScreen> {
                     semanticsLabel: '${_scene.title} 배경',
                   )
                 : _LivingBackground(
-                    key: ValueKey(showScene ? sceneImageAsset : 'summary'),
-                    imageAsset: showScene
-                        ? sceneImageAsset
-                        : 'assets/images/scene_3.jpg',
-                    alignment: showScene
-                        ? compact
-                              ? Alignment.center
-                              : sceneVisual.alignment
-                        : const Alignment(0.25, 0),
+                    key: ValueKey(sceneImageAsset),
+                    imageAsset: sceneImageAsset,
+                    alignment: compact
+                        ? Alignment.center
+                        : sceneVisual.alignment,
                     motionOffset: compact
                         ? sceneVisual.pan * 0.45
                         : sceneVisual.pan,
@@ -1277,9 +1307,7 @@ class _JourneyScreenState extends State<JourneyScreen> {
                     motionDuration: sceneVisual.duration,
                     hazeColor: sceneVisual.haze,
                     showWater: sceneVisual.water,
-                    semanticsLabel: showScene
-                        ? '${_scene.title} 배경'
-                        : '이타카로 돌아가는 배',
+                    semanticsLabel: '${_scene.title} 배경',
                   ),
           ),
           AnimatedOpacity(
@@ -1418,16 +1446,17 @@ class _JourneyScreenState extends State<JourneyScreen> {
                         ),
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            maxWidth: compact ? 330 : 620,
+                            maxWidth: compact ? 330 : 680,
                           ),
                           child: Container(
                             key: const Key('scene-intro-card'),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 18,
+                            width: double.infinity,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: compact ? 20 : 30,
+                              vertical: compact ? 18 : 26,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xA6141720),
+                              color: const Color(0xEB090B0F),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: Colors.white.withValues(alpha: 0.18),
@@ -1453,7 +1482,7 @@ class _JourneyScreenState extends State<JourneyScreen> {
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 12),
                                 Text(
                                   _keepWordsTogether(_scene.title),
                                   key: const Key('scene-intro-title'),
@@ -1462,7 +1491,9 @@ class _JourneyScreenState extends State<JourneyScreen> {
                                       .textTheme
                                       .headlineMedium
                                       ?.copyWith(
-                                        height: 1.25,
+                                        color: Colors.white,
+                                        fontSize: compact ? 32 : 40,
+                                        height: 1.22,
                                         fontWeight: FontWeight.w900,
                                       ),
                                 ),
@@ -2259,6 +2290,7 @@ class _CompleteStep extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 600;
+        final closingParagraphs = scene.closingMessage.split('\n\n');
         return Stack(
           key: const Key('cinematic-closing'),
           fit: StackFit.expand,
@@ -2271,8 +2303,28 @@ class _CompleteStep extends StatelessWidget {
                 child: FractionallySizedBox(
                   widthFactor: compact ? 0.9 : 0.68,
                   child: SingleChildScrollView(
-                    child: Text(
-                      scene.closingMessage,
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          for (
+                            var index = 0;
+                            index < closingParagraphs.length;
+                            index++
+                          ) ...[
+                            TextSpan(
+                              text: closingParagraphs[index],
+                              style: index == closingParagraphs.length - 1
+                                  ? const TextStyle(
+                                      color: _gold,
+                                      fontWeight: FontWeight.w900,
+                                    )
+                                  : null,
+                            ),
+                            if (index < closingParagraphs.length - 1)
+                              const TextSpan(text: '\n\n'),
+                          ],
+                        ],
+                      ),
                       key: const Key('closing-message'),
                       style: TextStyle(
                         color: Colors.white,
@@ -2383,8 +2435,8 @@ class _EndingCreditsStep extends StatelessWidget {
                                 _keepWordsTogether(credit.role),
                                 semanticsLabel: credit.role,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: _gold,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.72),
                                   fontSize: 12,
                                   letterSpacing: 1.1,
                                   fontWeight: FontWeight.w800,
@@ -2416,13 +2468,27 @@ class _EndingCreditsStep extends StatelessWidget {
                       height: 1.6,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '긴 항해의 끝에서, 우리는 다시 왕을 맞이합니다.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: compact ? 15 : 17,
+                      height: 1.6,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const SizedBox(height: 22),
                   FilledButton.icon(
                     key: const Key('reset-journey'),
                     onPressed: onReset,
                     style: FilledButton.styleFrom(
-                      backgroundColor: _gold,
-                      foregroundColor: const Color(0xFF201807),
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.72),
+                      ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 26,
                         vertical: 16,
