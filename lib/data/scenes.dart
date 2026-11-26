@@ -125,6 +125,7 @@ const journeyScenes = <JourneyScene>[
     ],
     reflectionPrompt: _meditationQuestion,
     closingMessage: '세상을 사랑하는 마음을 ‘포기’할 수 있는 우리가 되었으면 좋겠습니다.',
+    closingHighlight: '포기',
     choices: [
       JourneyChoice(
         label: '궁금하니 결과를 조금 더 확인해 본다',
@@ -469,7 +470,7 @@ const journeyScenes = <JourneyScene>[
     id: 'return',
     title: '왕의 귀환, 다시, 이타카',
     hook: '숨어든 ‘진짜’',
-    story: '“--”\n\n활 시위를 튕기는 소리에 연회장이 얼어붙습니다.\n\n화살이 일곱 도끼를 관통해 건너편 판자에 박혔을 때,\n\n일대의 혼란이 좌중을 압도하는 가운데에도\n\n그들의 귀에 생생히 들리는 울부짖음이 있습니다.\n\n“오디세우스가 돌아왔다.”',
+    story: '“♪--”\n\n활 시위를 튕기는 소리에 연회장이 얼어붙습니다.\n\n화살이 일곱 도끼를 관통해 건너편 판자에 박혔을 때,\n\n일대의 혼란이 좌중을 압도하는 가운데에도\n\n그들의 귀에 생생히 들리는 울부짖음이 있습니다.\n\n“오디세우스가 돌아왔다.”',
     question: '조용하지만 분명히 역사하시는 하나님을 경험해 본 적이 있나요?',
     discussion:
         '상황이 완전히 불리하게 돌아가고 있다고 느낀 적이 있나요?\n\n'

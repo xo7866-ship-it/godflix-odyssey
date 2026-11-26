@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:godflix/ambient_audio.dart';
 import 'package:godflix/data/scenes.dart';
@@ -92,7 +93,7 @@ void main() {
     expect(journeyScenes[9].story, contains('파편을 모읍니다'));
     expect(journeyScenes[9].scriptureReference, '이사야 17장 9절');
     expect(journeyScenes[9].scriptureText, contains('네 구원의 하나님을 잊어버리며'));
-    expect(journeyScenes[10].story, startsWith('“--”'));
+    expect(journeyScenes[10].story, startsWith('“♪--”'));
   });
 
   test('provided scene artwork is connected to scenes two through ten', () {
@@ -538,6 +539,37 @@ void main() {
     expect(assets, contains('assets/images/scene_11_ithaca_ship.png'));
   });
 
+  testWidgets('episode three closing only highlights 포기', (tester) async {
+    await tester.pumpWidget(GodflixApp(progressStore: ProgressStore()));
+    await tester.tap(find.byKey(const Key('start-journey')));
+    await _pumpDeparture(tester);
+    await tester.tap(find.byKey(const Key('skip-overview-intro')));
+    await _pumpTransition(tester);
+    await _tapVisible(tester, find.byKey(const Key('map-scene-2')));
+    await _pumpTransition(tester);
+    await _revealScene(tester);
+    for (final key in [
+      'open-choices',
+      'open-scripture',
+      'open-reflection',
+      'complete-scene',
+    ]) {
+      await _tapVisible(tester, find.byKey(Key(key)));
+      await _pumpTransition(tester);
+    }
+
+    final message = tester.widget<Text>(
+      find.byKey(const Key('closing-message')),
+    );
+    final span = message.textSpan! as TextSpan;
+    expect(span.toPlainText(), journeyScenes[2].closingMessage);
+    expect(message.style?.color, Colors.white);
+    final highlighted = span.children!.whereType<TextSpan>().where(
+      (span) => span.style?.color == const Color(0xFFF5C542),
+    );
+    expect(highlighted.map((span) => span.text), ['포기']);
+  });
+
   testWidgets('last scene opens the one-screen ending credits', (tester) async {
     _setViewport(tester, const Size(1280, 900));
     await tester.pumpWidget(GodflixApp(progressStore: ProgressStore()));
@@ -851,6 +883,17 @@ void main() {
       tester.view.physicalSize = const Size(1280, 800);
       await tester.pump();
       expect(tester.widget<Text>(title).style?.fontSize, 40);
+      if (index == 1 || index == 2) {
+        final paragraph = tester.renderObject<RenderParagraph>(
+          find.descendant(of: title, matching: find.byType(RichText)),
+        );
+        final text = tester.widget<Text>(title).data!;
+        final nameStart = text.indexOf(', ') + 2;
+        final nameBoxes = paragraph.getBoxesForSelection(
+          TextSelection(baseOffset: nameStart, extentOffset: text.length),
+        );
+        expect(nameBoxes.map((box) => box.top).toSet(), hasLength(1));
+      }
       expect(tester.getSize(card).width, 680);
       expect(
         (tester.widget<Container>(card).decoration! as BoxDecoration).color,

@@ -1483,20 +1483,7 @@ class _JourneyScreenState extends State<JourneyScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 12),
-                                Text(
-                                  _keepWordsTogether(_scene.title),
-                                  key: const Key('scene-intro-title'),
-                                  semanticsLabel: _scene.title,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontSize: compact ? 32 : 40,
-                                        height: 1.22,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                ),
+                                _buildIntroTitle(compact),
                               ],
                             ),
                           ),
@@ -1528,6 +1515,50 @@ class _JourneyScreenState extends State<JourneyScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildIntroTitle(bool compact) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final style = Theme.of(context).textTheme.headlineMedium?.copyWith(
+          color: Colors.white,
+          fontSize: compact ? 32 : 40,
+          height: 1.22,
+          fontWeight: FontWeight.w900,
+        );
+        final title = _scene.title;
+        var displayTitle = _keepWordsTogether(title);
+        final comma = title.indexOf(', ');
+        if (comma >= 0) {
+          final name = title.substring(comma + 2);
+          final words = name.split(' ');
+          // Keep the name together when it fits, or its last two words on mobile.
+          for (final phrase in [
+            name,
+            if (words.length > 2) words.skip(words.length - 2).join(' '),
+          ]) {
+            final grouped = _keepWordsTogether(phrase)
+                .replaceAll(' ', '\u00A0');
+            final width = TextPainter.computeWidth(
+              text: TextSpan(text: grouped, style: style),
+              textDirection: Directionality.of(context),
+              textScaler: MediaQuery.textScalerOf(context),
+            );
+            if (width <= constraints.maxWidth) {
+              final prefix = title.substring(0, title.length - phrase.length);
+              displayTitle = '${_keepWordsTogether(prefix)}$grouped';
+              break;
+            }
+          }
+        }
+        return Text(
+          displayTitle,
+          key: const Key('scene-intro-title'),
+          semanticsLabel: title,
+          style: style,
+        );
+      },
     );
   }
 
@@ -2291,6 +2322,14 @@ class _CompleteStep extends StatelessWidget {
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 600;
         final closingParagraphs = scene.closingMessage.split('\n\n');
+        final highlight = scene.closingHighlight;
+        final highlightStart = highlight == null
+            ? -1
+            : scene.closingMessage.indexOf(highlight);
+        const highlightStyle = TextStyle(
+          color: _gold,
+          fontWeight: FontWeight.w900,
+        );
         return Stack(
           key: const Key('cinematic-closing'),
           fit: StackFit.expand,
@@ -2306,22 +2345,31 @@ class _CompleteStep extends StatelessWidget {
                     child: Text.rich(
                       TextSpan(
                         children: [
-                          for (
-                            var index = 0;
-                            index < closingParagraphs.length;
-                            index++
-                          ) ...[
+                          if (highlight != null && highlightStart >= 0) ...[
                             TextSpan(
-                              text: closingParagraphs[index],
-                              style: index == closingParagraphs.length - 1
-                                  ? const TextStyle(
-                                      color: _gold,
-                                      fontWeight: FontWeight.w900,
-                                    )
-                                  : null,
+                              text: scene.closingMessage.substring(
+                                0,
+                                highlightStart,
+                              ),
                             ),
-                            if (index < closingParagraphs.length - 1)
-                              const TextSpan(text: '\n\n'),
+                            TextSpan(text: highlight, style: highlightStyle),
+                            TextSpan(
+                              text: scene.closingMessage.substring(
+                                highlightStart + highlight.length,
+                              ),
+                            ),
+                          ] else ...[
+                            for (final paragraph in closingParagraphs.indexed)
+                              TextSpan(
+                                text:
+                                    paragraph.$1 == closingParagraphs.length - 1
+                                    ? paragraph.$2
+                                    : '${paragraph.$2}\n\n',
+                                style:
+                                    paragraph.$1 == closingParagraphs.length - 1
+                                    ? highlightStyle
+                                    : null,
+                              ),
                           ],
                         ],
                       ),
