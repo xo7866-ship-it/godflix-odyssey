@@ -353,6 +353,10 @@ void main() {
     await _pumpTransition(tester);
 
     expect(find.byKey(const Key('scene-discussion')), findsOneWidget);
+    final scriptureInvitation = tester.widget<Text>(
+      find.byKey(const Key('scripture-invitation')),
+    );
+    expect(scriptureInvitation.style?.fontStyle, FontStyle.italic);
     expect(
       find.text('내 삶에 하나님이 계시지 않아 생긴 어려움과 혼란이 있나요?').hitTestable(),
       findsOneWidget,
@@ -402,25 +406,26 @@ void main() {
     await _pumpTransition(tester);
     expect(find.text('묵상 질문'), findsWidgets);
     expect(find.byKey(const Key('meditation-direction')), findsOneWidget);
-    expect(find.text('묵상 방향성'), findsOneWidget);
+    expect(find.text('묵상 방향성'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.byKey(const Key('reflection-field')), findsNothing);
     expect(
       find.text(
         '내 마음에 하나님이 안 계시면 사단이 들어옵니다.\n\n악에 대한 유일한 방어막은 내 마음의 왕좌에 하나님을 모시는 것입니다.',
       ),
       findsOneWidget,
     );
-    await tester.enterText(
-      find.byKey(const Key('reflection-field')),
-      '결정 전에 기도하기',
-    );
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pump();
     await _tapVisible(tester, find.byKey(const Key('complete-scene')));
     await _pumpTransition(tester);
 
     expect(store.readCompletedSceneIds(), {'ithaca'});
-    expect(find.text('마무리 멘트'), findsOneWidget);
+    expect(find.text('마무리 멘트'), findsNothing);
+    expect(find.byKey(const Key('cinematic-closing')), findsOneWidget);
     expect(find.byKey(const Key('closing-message')), findsOneWidget);
+    final closingMessage = tester.widget<Text>(
+      find.byKey(const Key('closing-message')),
+    );
+    expect(closingMessage.style?.fontSize, 40);
     expect(
       find.text(
         '우리 마음의 왕좌에 하나님을 모시면\n\n우리 삶에 헷갈릴 일도 없고 흔들릴 일도 없어질 것입니다.\n\n하나님을 마음에 모시는 우리가 되었으면 좋겠습니다.',
@@ -428,6 +433,18 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('나눔 질문'), findsNothing);
+    expect(
+      tester.getCenter(find.byKey(const Key('next-scene'))).dx,
+      greaterThan(
+        tester.getCenter(find.byKey(const Key('closing-message'))).dx,
+      ),
+    );
+    expect(
+      tester.getCenter(find.byKey(const Key('next-scene'))).dy,
+      greaterThan(
+        tester.getCenter(find.byKey(const Key('closing-message'))).dy,
+      ),
+    );
     await _tapVisible(tester, find.byKey(const Key('next-scene')));
     await _pumpTransition(tester);
     await _revealScene(tester);
@@ -615,6 +632,37 @@ void main() {
         .hitTestable();
     expect(question, findsOneWidget);
     expect(tester.getTopLeft(question).dy, lessThan(360));
+    expect(
+      tester
+          .widget<Text>(find.byKey(const Key('scripture-invitation')))
+          .style
+          ?.fontStyle,
+      FontStyle.italic,
+    );
+
+    await _tapVisible(tester, find.byKey(const Key('open-scripture')));
+    await _pumpTransition(tester);
+    await _tapVisible(tester, find.byKey(const Key('open-reflection')));
+    await _pumpTransition(tester);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('묵상 방향성'), findsNothing);
+    expect(find.byKey(const Key('meditation-direction')), findsOneWidget);
+
+    await _tapVisible(tester, find.byKey(const Key('complete-scene')));
+    await _pumpTransition(tester);
+    expect(find.byKey(const Key('cinematic-closing')), findsOneWidget);
+    expect(
+      tester
+          .widget<Text>(find.byKey(const Key('closing-message')))
+          .style
+          ?.fontSize,
+      26,
+    );
+    final nextButtonRect = tester.getRect(find.byKey(const Key('next-scene')));
+    expect(nextButtonRect.right, lessThanOrEqualTo(390));
+    expect(nextButtonRect.bottom, lessThanOrEqualTo(844));
+    expect(nextButtonRect.center.dx, greaterThan(195));
+    expect(nextButtonRect.center.dy, greaterThan(600));
     expect(tester.takeException(), isNull);
   });
 

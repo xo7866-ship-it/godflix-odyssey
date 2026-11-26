@@ -981,7 +981,6 @@ class JourneyScreen extends StatefulWidget {
 class _JourneyScreenState extends State<JourneyScreen> {
   late int _sceneIndex;
   late JourneyStep _step;
-  final _reflectionController = TextEditingController();
   final _answers = <JourneyAnswer>[];
   final _preloadedImageAssets = <String>{};
   final _preloadedAudioAssets = <String>{};
@@ -1153,12 +1152,6 @@ class _JourneyScreenState extends State<JourneyScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _reflectionController.dispose();
-    super.dispose();
-  }
-
   void _startSceneStory() => _goTo(JourneyStep.story);
 
   void _goTo(JourneyStep step) {
@@ -1200,12 +1193,7 @@ class _JourneyScreenState extends State<JourneyScreen> {
 
   void _completeScene() {
     _answers.removeWhere((answer) => answer.scene.id == _scene.id);
-    _answers.add(
-      JourneyAnswer(
-        scene: _scene,
-        reflection: _reflectionController.text.trim(),
-      ),
-    );
+    _answers.add(JourneyAnswer(scene: _scene, reflection: ''));
     widget.onProgress(_scene.id);
     _goTo(JourneyStep.complete);
   }
@@ -1217,7 +1205,6 @@ class _JourneyScreenState extends State<JourneyScreen> {
     }
     setState(() {
       _sceneIndex += 1;
-      _reflectionController.clear();
       _step = JourneyStep.background;
     });
     widget.onAudioChanged(_scene.audioAsset, false);
@@ -1230,7 +1217,9 @@ class _JourneyScreenState extends State<JourneyScreen> {
     final showScene = _step != JourneyStep.summary;
     final backgroundOnly = _step == JourneyStep.background;
     final brightenScene =
-        _step == JourneyStep.story || _step == JourneyStep.discussion;
+        _step == JourneyStep.story ||
+        _step == JourneyStep.discussion ||
+        _step == JourneyStep.complete;
     final sceneVisual = _sceneVisual(showScene ? _scene.id : 'summary');
     final sceneImageAsset = compact
         ? _scene.mobileImageAsset
@@ -1343,19 +1332,39 @@ class _JourneyScreenState extends State<JourneyScreen> {
                                   child: child,
                                 ),
                               ),
-                          child: SingleChildScrollView(
-                            key: ValueKey('${_scene.id}-${_step.name}-scroll'),
-                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-                            child: Align(
-                              alignment: Alignment.topCenter,
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 760,
+                          child: _step == JourneyStep.complete
+                              ? Padding(
+                                  key: ValueKey(
+                                    '${_scene.id}-${_step.name}-cinematic',
+                                  ),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    16,
+                                    20,
+                                    24,
+                                  ),
+                                  child: _buildStep(),
+                                )
+                              : SingleChildScrollView(
+                                  key: ValueKey(
+                                    '${_scene.id}-${_step.name}-scroll',
+                                  ),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    16,
+                                    20,
+                                    32,
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.topCenter,
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 760,
+                                      ),
+                                      child: _buildStep(),
+                                    ),
+                                  ),
                                 ),
-                                child: _buildStep(),
-                              ),
-                            ),
-                          ),
                         ),
                       ),
                     ],
@@ -1489,7 +1498,6 @@ class _JourneyScreenState extends State<JourneyScreen> {
       JourneyStep.reflection => _ReflectionStep(
         key: ValueKey('${_scene.id}-reflection'),
         scene: _scene,
-        controller: _reflectionController,
         onComplete: _completeScene,
       ),
       JourneyStep.complete => _CompleteStep(
@@ -1946,22 +1954,42 @@ class _QuestionActionCardState extends State<_QuestionActionCard> {
 class _DiscussionStep extends StatelessWidget {
   const _DiscussionStep({super.key, required this.scene, required this.onNext});
 
+  static const _scriptureInvitation = '하나님께서는 이에 대해 뭐라고 말씀하실까요? 말씀을 함께 읽어봅시다.';
+
   final JourneyScene scene;
   final VoidCallback onNext;
 
   @override
   Widget build(BuildContext context) {
+    final discussion = scene.discussion.trimRight();
+    final body = discussion.endsWith(_scriptureInvitation)
+        ? discussion
+              .substring(0, discussion.length - _scriptureInvitation.length)
+              .trimRight()
+        : discussion;
     return _StepPanel(
       eyebrow: '함께 나누기',
       title: scene.question,
       children: [
+        if (body.isNotEmpty)
+          Text(
+            body,
+            key: const Key('scene-discussion'),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 18,
+              height: 1.85,
+            ),
+          ),
+        const SizedBox(height: 22),
         Text(
-          scene.discussion,
-          key: const Key('scene-discussion'),
+          _scriptureInvitation,
+          key: const Key('scripture-invitation'),
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.9),
             fontSize: 18,
-            height: 1.85,
+            height: 1.75,
+            fontStyle: FontStyle.italic,
           ),
         ),
         const SizedBox(height: 30),
@@ -2142,12 +2170,10 @@ class _ReflectionStep extends StatelessWidget {
   const _ReflectionStep({
     super.key,
     required this.scene,
-    required this.controller,
     required this.onComplete,
   });
 
   final JourneyScene scene;
-  final TextEditingController controller;
   final VoidCallback onComplete;
 
   @override
@@ -2156,69 +2182,16 @@ class _ReflectionStep extends StatelessWidget {
       eyebrow: '묵상 질문',
       title: scene.reflectionPrompt,
       children: [
-        Container(
-          key: const Key('meditation-direction'),
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: _gold.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: _gold.withValues(alpha: 0.45)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '묵상 방향성',
-                style: TextStyle(color: _gold, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                scene.meditation,
-                style: const TextStyle(fontSize: 16, height: 1.7),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 22),
-        TextField(
-          key: const Key('reflection-field'),
-          controller: controller,
-          maxLength: 160,
-          minLines: 4,
-          maxLines: 7,
-          textInputAction: TextInputAction.done,
-          decoration: InputDecoration(
-            hintText: '한 문장으로 적어 보세요. 비워 두어도 괜찮습니다.',
-            filled: true,
-            fillColor: Colors.black.withValues(alpha: 0.42),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.2),
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.2),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: _gold, width: 2),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
         Text(
-          '작성한 문장은 서버로 전송하지 않으며 현재 여정에서만 사용합니다.',
+          scene.meditation,
+          key: const Key('meditation-direction'),
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.68),
-            height: 1.45,
+            color: Colors.white.withValues(alpha: 0.92),
+            fontSize: 18,
+            height: 1.85,
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 30),
         _PrimaryButton(
           key: const Key('complete-scene'),
           label: '장면 마무리하기',
@@ -2244,33 +2217,66 @@ class _CompleteStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _StepPanel(
-      eyebrow: '마무리 멘트',
-      title: scene.title,
-      children: [
-        Container(
-          key: const Key('closing-message'),
-          width: double.infinity,
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: _gold.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: _gold.withValues(alpha: 0.48)),
-          ),
-          child: Text(
-            scene.closingMessage,
-            style: Theme.of(context).textTheme.titleMedium
-                ?.copyWith(height: 1.75, fontWeight: FontWeight.w700),
-          ),
-        ),
-        const SizedBox(height: 28),
-        _PrimaryButton(
-          key: const Key('next-scene'),
-          label: isLast ? '여정 돌아보기' : '다음 장면으로',
-          icon: isLast ? Icons.auto_stories : Icons.arrow_forward,
-          onPressed: onNext,
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 600;
+        return Stack(
+          key: const Key('cinematic-closing'),
+          fit: StackFit.expand,
+          children: [
+            Positioned(
+              left: compact ? 4 : 40,
+              top: 0,
+              right: compact ? 4 : constraints.maxWidth * 0.24,
+              bottom: 92,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SingleChildScrollView(
+                  child: Text(
+                    scene.closingMessage,
+                    key: const Key('closing-message'),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: compact ? 26 : 40,
+                      height: 1.55,
+                      fontWeight: FontWeight.w800,
+                      shadows: const [
+                        Shadow(
+                          color: Color(0xCC000000),
+                          blurRadius: 18,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: compact ? 4 : 28,
+              bottom: compact ? 4 : 20,
+              child: FilledButton.icon(
+                key: const Key('next-scene'),
+                onPressed: onNext,
+                style: FilledButton.styleFrom(
+                  backgroundColor: _gold,
+                  foregroundColor: const Color(0xFF201807),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: compact ? 22 : 30,
+                    vertical: 18,
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                icon: Icon(isLast ? Icons.auto_stories : Icons.arrow_forward),
+                label: Text(isLast ? '여정 돌아보기' : '다음 장면으로'),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
