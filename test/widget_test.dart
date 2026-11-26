@@ -354,9 +354,14 @@ void main() {
 
     expect(find.byKey(const Key('scene-discussion')), findsOneWidget);
     final scriptureInvitation = tester.widget<Text>(
-      find.byKey(const Key('scripture-invitation')),
+      find.byKey(const Key('scripture-invitation-text')),
     );
     expect(scriptureInvitation.style?.fontStyle, FontStyle.italic);
+    expect(scriptureInvitation.style?.fontWeight, FontWeight.w600);
+    final invitationTransform = tester.widget<Transform>(
+      find.byKey(const Key('scripture-invitation')),
+    );
+    expect(invitationTransform.transform.entry(0, 1), closeTo(-0.18, 0.001));
     expect(
       find.text('내 삶에 하나님이 계시지 않아 생긴 어려움과 혼란이 있나요?').hitTestable(),
       findsOneWidget,
@@ -422,6 +427,25 @@ void main() {
     expect(find.text('마무리 멘트'), findsNothing);
     expect(find.byKey(const Key('cinematic-closing')), findsOneWidget);
     expect(find.byKey(const Key('closing-message')), findsOneWidget);
+    final sceneOverlay = tester.widget<AnimatedContainer>(
+      find.byKey(const Key('scene-shade-overlay')),
+    );
+    expect(
+      (sceneOverlay.decoration! as BoxDecoration).gradient,
+      isA<LinearGradient>().having(
+        (gradient) => gradient.colors,
+        'dark cinematic colors',
+        const [Color(0x70000000), Color(0x8F08090C), Color(0xC408090C)],
+      ),
+    );
+    expect(
+      tester
+          .widget<Align>(
+            find.byKey(const Key('closing-message-placement-ithaca')),
+          )
+          .alignment,
+      const Alignment(-1, -0.72),
+    );
     final closingMessage = tester.widget<Text>(
       find.byKey(const Key('closing-message')),
     );
@@ -634,10 +658,17 @@ void main() {
     expect(tester.getTopLeft(question).dy, lessThan(360));
     expect(
       tester
-          .widget<Text>(find.byKey(const Key('scripture-invitation')))
+          .widget<Text>(find.byKey(const Key('scripture-invitation-text')))
           .style
           ?.fontStyle,
       FontStyle.italic,
+    );
+    expect(
+      tester
+          .widget<Transform>(find.byKey(const Key('scripture-invitation')))
+          .transform
+          .entry(0, 1),
+      closeTo(-0.18, 0.001),
     );
 
     await _tapVisible(tester, find.byKey(const Key('open-scripture')));

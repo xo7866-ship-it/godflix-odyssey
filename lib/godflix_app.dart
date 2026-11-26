@@ -1216,10 +1216,9 @@ class _JourneyScreenState extends State<JourneyScreen> {
     final compact = MediaQuery.sizeOf(context).width < _compactLayoutBreakpoint;
     final showScene = _step != JourneyStep.summary;
     final backgroundOnly = _step == JourneyStep.background;
+    final cinematicClosing = _step == JourneyStep.complete;
     final brightenScene =
-        _step == JourneyStep.story ||
-        _step == JourneyStep.discussion ||
-        _step == JourneyStep.complete;
+        _step == JourneyStep.story || _step == JourneyStep.discussion;
     final sceneVisual = _sceneVisual(showScene ? _scene.id : 'summary');
     final sceneImageAsset = compact
         ? _scene.mobileImageAsset
@@ -1269,13 +1268,20 @@ class _JourneyScreenState extends State<JourneyScreen> {
             duration: const Duration(milliseconds: 1100),
             curve: Curves.easeOutCubic,
             child: AnimatedContainer(
+              key: const Key('scene-shade-overlay'),
               duration: const Duration(milliseconds: 700),
               curve: Curves.easeOutCubic,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: brightenScene
+                  colors: cinematicClosing
+                      ? const [
+                          Color(0x70000000),
+                          Color(0x8F08090C),
+                          Color(0xC408090C),
+                        ]
+                      : brightenScene
                       ? const [
                           Color(0x1F000000),
                           Color(0x4808090C),
@@ -1503,6 +1509,10 @@ class _JourneyScreenState extends State<JourneyScreen> {
       JourneyStep.complete => _CompleteStep(
         key: ValueKey('${_scene.id}-complete'),
         scene: _scene,
+        textAlignment: _sceneIntroAlignment(
+          _scene.id,
+          compact: MediaQuery.sizeOf(context).width < _compactLayoutBreakpoint,
+        ),
         isLast: _sceneIndex == journeyScenes.length - 1,
         onNext: _nextScene,
       ),
@@ -1982,14 +1992,23 @@ class _DiscussionStep extends StatelessWidget {
             ),
           ),
         const SizedBox(height: 22),
-        Text(
-          _scriptureInvitation,
-          key: const Key('scripture-invitation'),
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.9),
-            fontSize: 18,
-            height: 1.75,
-            fontStyle: FontStyle.italic,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Transform(
+            key: const Key('scripture-invitation'),
+            alignment: Alignment.centerLeft,
+            transform: Matrix4.identity()..setEntry(0, 1, -0.18),
+            child: Text(
+              _scriptureInvitation,
+              key: const Key('scripture-invitation-text'),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.94),
+                fontSize: 18,
+                height: 1.75,
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 30),
@@ -2207,11 +2226,13 @@ class _CompleteStep extends StatelessWidget {
   const _CompleteStep({
     super.key,
     required this.scene,
+    required this.textAlignment,
     required this.isLast,
     required this.onNext,
   });
 
   final JourneyScene scene;
+  final Alignment textAlignment;
   final bool isLast;
   final VoidCallback onNext;
 
@@ -2224,29 +2245,30 @@ class _CompleteStep extends StatelessWidget {
           key: const Key('cinematic-closing'),
           fit: StackFit.expand,
           children: [
-            Positioned(
-              left: compact ? 4 : 40,
-              top: 0,
-              right: compact ? 4 : constraints.maxWidth * 0.24,
+            Positioned.fill(
               bottom: 92,
               child: Align(
-                alignment: Alignment.centerLeft,
-                child: SingleChildScrollView(
-                  child: Text(
-                    scene.closingMessage,
-                    key: const Key('closing-message'),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: compact ? 26 : 40,
-                      height: 1.55,
-                      fontWeight: FontWeight.w800,
-                      shadows: const [
-                        Shadow(
-                          color: Color(0xCC000000),
-                          blurRadius: 18,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
+                key: Key('closing-message-placement-${scene.id}'),
+                alignment: textAlignment,
+                child: FractionallySizedBox(
+                  widthFactor: compact ? 0.9 : 0.68,
+                  child: SingleChildScrollView(
+                    child: Text(
+                      scene.closingMessage,
+                      key: const Key('closing-message'),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: compact ? 26 : 40,
+                        height: 1.55,
+                        fontWeight: FontWeight.w800,
+                        shadows: const [
+                          Shadow(
+                            color: Color(0xE6000000),
+                            blurRadius: 20,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
