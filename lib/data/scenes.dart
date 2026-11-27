@@ -478,8 +478,8 @@ const journeyScenes = <JourneyScene>[
         '신앙을 ‘지켜야’ 했을 때가 있었나요?\n\n'
         '사단이 내 신앙을 완전히 장악하고 곧 잡아먹힐 것만 같았던 때가 있었나요?\n\n'
         '그 일은 어떻게 결론이 났나요?',
-    imageAsset: 'assets/images/scene_11_ithaca_return_v2.png',
-    mobileImageAsset: 'assets/images/scene_11_ithaca_return_mobile.png',
+    imageAsset: 'assets/images/scene_11_ithaca_archery.png',
+    mobileImageAsset: 'assets/images/scene_11_ithaca_archery.png',
     scriptureReference: '요한계시록 2장 25절',
     scriptureText: '다만 너희에게 있는 것을 내가 올 때까지 굳게 잡으라.',
     meditation:

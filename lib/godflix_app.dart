@@ -1149,6 +1149,15 @@ class _JourneyScreenState extends State<JourneyScreen> {
       haze: const Color(0xFFFFD39A),
       water: true,
     ),
+    'return' => (
+      alignment: const Alignment(0.32, 0),
+      pan: const Offset(12, 3),
+      zoom: 0.025,
+      rotation: 0.0015,
+      duration: const Duration(seconds: 21),
+      haze: const Color(0xFFFFD39A),
+      water: false,
+    ),
     _ => (
       alignment: const Alignment(0.35, 0),
       pan: const Offset(18, 5),
@@ -1180,21 +1189,9 @@ class _JourneyScreenState extends State<JourneyScreen> {
     }
     final nextScene = journeyScenes[nextIndex];
     final compact = MediaQuery.sizeOf(context).width < _compactLayoutBreakpoint;
-    final List<String> imageAssets;
-    if (compact) {
-      imageAssets = [nextScene.mobileImageAsset];
-    } else if (nextScene.id == 'return') {
-      imageAssets = const [
-        'assets/images/scene_11_ithaca_plate.png',
-        'assets/images/scene_11_ithaca_ship.png',
-      ];
-    } else {
-      imageAssets = [nextScene.imageAsset];
-    }
-    for (final asset in imageAssets) {
-      if (_preloadedImageAssets.add(asset)) {
-        unawaited(precacheImage(AssetImage(asset), context));
-      }
+    final asset = compact ? nextScene.mobileImageAsset : nextScene.imageAsset;
+    if (_preloadedImageAssets.add(asset)) {
+      unawaited(precacheImage(AssetImage(asset), context));
     }
     if (_preloadedAudioAssets.add(nextScene.audioAsset)) {
       widget.onAudioPreload(nextScene.audioAsset);
@@ -1282,19 +1279,10 @@ class _JourneyScreenState extends State<JourneyScreen> {
                     key: ValueKey('summary-black-background'),
                     color: Colors.black,
                   )
-                : _scene.id == 'return' && !compact
-                ? _LayeredSailingBackground(
-                    key: const ValueKey('return-cinematic-background'),
-                    plateAsset: 'assets/images/scene_11_ithaca_plate.png',
-                    shipAsset: 'assets/images/scene_11_ithaca_ship.png',
-                    sourceSize: const Size(1672, 941),
-                    narrowAlignment: const Alignment(-0.62, 0),
-                    semanticsLabel: '${_scene.title} 배경',
-                  )
                 : _LivingBackground(
                     key: ValueKey(sceneImageAsset),
                     imageAsset: sceneImageAsset,
-                    alignment: compact
+                    alignment: compact && _scene.id != 'return'
                         ? Alignment.center
                         : sceneVisual.alignment,
                     motionOffset: compact

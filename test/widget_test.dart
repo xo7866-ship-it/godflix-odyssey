@@ -110,7 +110,7 @@ void main() {
     ]);
   });
 
-  test('all scenes have dedicated mobile artwork', () {
+  test('all scenes specify artwork for mobile', () {
     expect(journeyScenes.map((scene) => scene.mobileImageAsset), [
       'assets/images/scene_1_mobile.png',
       'assets/images/scene_2_troy_mobile.png',
@@ -122,7 +122,7 @@ void main() {
       'assets/images/scene_8_helios_mobile.png',
       'assets/images/scene_9_storm_mobile.png',
       'assets/images/scene_10_calypso_mobile.png',
-      'assets/images/scene_11_ithaca_return_mobile.png',
+      'assets/images/scene_11_ithaca_archery.png',
     ]);
   });
 
@@ -514,7 +514,7 @@ void main() {
     expect(sceneImage.alignment, const Alignment(-0.36, 0));
   });
 
-  testWidgets('return scene uses the layered cinematic background', (
+  testWidgets('return scene uses the archery hall for its desktop background', (
     tester,
   ) async {
     await tester.pumpWidget(GodflixApp(progressStore: ProgressStore()));
@@ -526,17 +526,16 @@ void main() {
     await _tapVisible(tester, find.byKey(const Key('map-scene-10')));
     await _pumpTransition(tester);
 
-    expect(
-      find.byKey(const Key('return-cinematic-background')),
-      findsOneWidget,
+    final background = find.byWidgetPredicate(
+      (widget) =>
+          widget is Image &&
+          widget.image ==
+              const AssetImage('assets/images/scene_11_ithaca_archery.png'),
     );
-    final assets = tester
-        .widgetList<Image>(find.byType(Image))
-        .where((image) => image.image is AssetImage)
-        .map((image) => (image.image as AssetImage).assetName)
-        .toSet();
-    expect(assets, contains('assets/images/scene_11_ithaca_plate.png'));
-    expect(assets, contains('assets/images/scene_11_ithaca_ship.png'));
+    expect(background, findsOneWidget);
+    await _revealScene(tester);
+    expect(background, findsOneWidget);
+    expect(find.byKey(const Key('scene-story')), findsOneWidget);
   });
 
   testWidgets('episode three closing only highlights 포기', (tester) async {
@@ -699,15 +698,15 @@ void main() {
 
     await _tapVisible(tester, find.byKey(const Key('map-scene-10')));
     await _pumpTransition(tester);
-    expect(find.byKey(const Key('return-cinematic-background')), findsNothing);
-    final mobileAssets = tester
-        .widgetList<Image>(find.byType(Image))
-        .where((image) => image.image is AssetImage)
-        .map((image) => (image.image as AssetImage).assetName)
-        .toSet();
+    final background = find.byWidgetPredicate(
+      (widget) =>
+          widget is Image &&
+          widget.image ==
+              const AssetImage('assets/images/scene_11_ithaca_archery.png'),
+    );
     expect(
-      mobileAssets,
-      contains('assets/images/scene_11_ithaca_return_mobile.png'),
+      tester.widget<Image>(background).alignment,
+      const Alignment(0.32, 0),
     );
     await tester.tap(find.byKey(const Key('continue-scene-intro')));
     await _pumpTransition(tester);
